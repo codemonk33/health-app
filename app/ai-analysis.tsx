@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 interface AnalysisResult {
@@ -238,6 +238,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: '#2c3e50',
     marginLeft: 8,
+    lineHeight: 28,
   },
   title: {
     fontSize: 28,
