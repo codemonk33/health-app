@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { getAnalysisForSymptom } from './utils/aiAnalysisData';
 
 interface AnalysisResult {
   possibleCauses: string[];
@@ -18,47 +19,17 @@ export default function AIAnalysisScreen() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Simulate AI analysis
+    // Generate AI analysis based on body part and symptom
     const performAnalysis = async () => {
       setIsLoading(true);
       
       // Simulate API call delay
       await new Promise(resolve => setTimeout(resolve, 2000));
       
-      // Mock analysis result based on symptom
-      const mockResult: AnalysisResult = {
-        possibleCauses: [
-          'Allergic reaction to environmental factors',
-          'Bacterial or viral infection',
-          'Dry eye syndrome',
-          'Contact lens irritation',
-          'Eye strain from digital devices'
-        ],
-        basicTreatment: [
-          'Apply warm compress for 10-15 minutes',
-          'Use over-the-counter eye drops',
-          'Avoid rubbing your eyes',
-          'Take breaks from screen time',
-          'Keep the area clean and dry'
-        ],
-        whenToSeekDoctor: [
-          'Severe pain or vision changes',
-          'Symptoms lasting more than 48 hours',
-          'Yellow or green discharge',
-          'Swelling that affects vision',
-          'Fever accompanying symptoms'
-        ],
-        recommendedFoods: [
-          'Foods rich in Vitamin A (carrots, sweet potatoes)',
-          'Omega-3 fatty acids (salmon, walnuts)',
-          'Antioxidant-rich foods (berries, leafy greens)',
-          'Zinc-rich foods (nuts, seeds)',
-          'Stay hydrated with plenty of water'
-        ],
-        severity: 'medium'
-      };
+      // Get dynamic analysis based on body part and symptom from the data file
+      const analysisResult = getAnalysisForSymptom(part || '', symptom || '');
       
-      setAnalysisResult(mockResult);
+      setAnalysisResult(analysisResult);
       setIsLoading(false);
     };
 
