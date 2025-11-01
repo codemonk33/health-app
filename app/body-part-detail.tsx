@@ -107,14 +107,14 @@ const bodyPartSymptoms: Record<string, MedicalImage[]> = {
       id: '11',
       name: 'Concussion',
       description: 'Head injury causing confusion',
-      imageUrl: 'https://via.placeholder.com/150/FFEAA7/FFFFFF?text=Concussion',
+      image: require('../assets/images/Concussion.png'),
       symptoms: ['Confusion', 'Memory loss', 'Headache', 'Dizziness']
     },
     {
       id: '12',
       name: 'Facial Pain',
       description: 'Pain or numbness in the face',
-      imageUrl: 'https://via.placeholder.com/150/DDA0DD/FFFFFF?text=Facial+Pain',
+      image: require('../assets/images/Facial Pain.jpg'),
       symptoms: ['Facial pain', 'Numbness', 'Tingling', 'Headache']
     }
   ],
@@ -130,7 +130,7 @@ const bodyPartSymptoms: Record<string, MedicalImage[]> = {
       id: '14',
       name: 'Ear Infection',
       description: 'Inflammation or infection in the ear',
-      imageUrl: 'https://via.placeholder.com/150/45B7D1/FFFFFF?text=Ear+Infection',
+      image: require('../assets/images/Ear Infection.png'),
       symptoms: ['Earache', 'Fever', 'Drainage', 'Hearing loss']
     },
     {
@@ -151,7 +151,7 @@ const bodyPartSymptoms: Record<string, MedicalImage[]> = {
       id: '17',
       name: 'Ear Injury',
       description: 'Injury to the outer ear',
-      imageUrl: 'https://via.placeholder.com/150/FFEAA7/FFFFFF?text=Ear+Injury',
+      image: require('../assets/images/Ear Injury.jpg'),
       symptoms: ['Ear pain', 'Bleeding', 'Hearing loss', 'Dizziness']
     },
     {
@@ -167,14 +167,14 @@ const bodyPartSymptoms: Record<string, MedicalImage[]> = {
       id: '19',
       name: 'Nasal Congestion',
       description: 'Blocked nose',
-      imageUrl: 'https://via.placeholder.com/150/4ECDC4/FFFFFF?text=Nasal+Congestion',
+      image: require('../assets/images/Nasal Congestion.png'),
       symptoms: ['Nasal congestion', 'Sneezing', 'Runny nose', 'Postnasal drip']
     },
     {
       id: '20',
       name: 'Sinus Infection',
       description: 'Inflammation or infection in the sinuses',
-      imageUrl: 'https://via.placeholder.com/150/45B7D1/FFFFFF?text=Sinus+Infection',
+      image: require('../assets/images/Sinus Infection.png'),
       symptoms: ['Nasal congestion', 'Facial pain', 'Headache', 'Fever']
     },
     {
@@ -188,14 +188,14 @@ const bodyPartSymptoms: Record<string, MedicalImage[]> = {
       id: '22',
       name: 'Nasal Polyps',
       description: 'Noncancerous growths in the nasal passages',
-      imageUrl: 'https://via.placeholder.com/150/96CEB4/FFFFFF?text=Nasal+Polyps',
+      image: require('../assets/images/Nasal Polyps.png'),
       symptoms: ['Nasal congestion', 'Sneezing', 'Postnasal drip', 'Facial pain']
     },
     {
       id: '23',
       name: 'Nose Injury',
       description: 'Injury to the nose',
-      imageUrl: 'https://via.placeholder.com/150/FFEAA7/FFFFFF?text=Nose+Injury',
+      image: require('../assets/images/Nose Injury.jpg'),
       symptoms: ['Nosebleed', 'Nasal congestion', 'Facial pain', 'Headache']
     },
     {
@@ -246,7 +246,7 @@ const bodyPartSymptoms: Record<string, MedicalImage[]> = {
       id: '30',
       name: 'Mouth Injury',
       description: 'Injury to the mouth or lips',
-      imageUrl: 'https://via.placeholder.com/150/DDA0DD/FFFFFF?text=Mouth+Injury',
+      image: require('../assets/images/Mouth Injury.png'),
       symptoms: ['Mouth pain', 'Bleeding', 'Swelling', 'Lip injury']
     }
   ],
@@ -269,7 +269,7 @@ const bodyPartSymptoms: Record<string, MedicalImage[]> = {
       id: '33',
       name: 'Neck Injury',
       description: 'Injury to the neck',
-      imageUrl: 'https://via.placeholder.com/150/45B7D1/FFFFFF?text=Neck+Injury',
+      image: require('../assets/images/Neck Injury.jpg.webp'),
       symptoms: ['Neck pain', 'Headache', 'Stiffness', 'Numbness']
     },
     {
@@ -290,7 +290,7 @@ const bodyPartSymptoms: Record<string, MedicalImage[]> = {
       id: '36',
       name: 'Neck Lump',
       description: 'Lump or growth in the neck area',
-      imageUrl: 'https://via.placeholder.com/150/DDA0DD/FFFFFF?text=Neck+Lump',
+      image: require('../assets/images/Neck Lump.jpg'),
       symptoms: ['Neck lump', 'Pain', 'Swelling', 'Headache']
     }
   ],
@@ -378,7 +378,7 @@ const bodyPartSymptoms: Record<string, MedicalImage[]> = {
       id: '48',
       name: 'Stomach Lump',
       description: 'Lump or growth in the stomach area',
-      imageUrl: 'https://via.placeholder.com/150/DDA0DD/FFFFFF?text=Stomach+Lump',
+      image: require('../assets/images/Stomach Lump.jpg'),
       symptoms: ['Stomach lump', 'Pain', 'Swelling', 'Bloating']
     }
   ],
@@ -401,28 +401,28 @@ const bodyPartSymptoms: Record<string, MedicalImage[]> = {
       id: '51',
       name: 'Arm Swelling',
       description: 'Swelling in the arm',
-      imageUrl: 'https://via.placeholder.com/150/45B7D1/FFFFFF?text=Arm+Swelling',
+      image: require('../assets/images/Arm Swelling.jpeg'),
       symptoms: ['Arm swelling', 'Pain', 'Limited mobility', 'Redness']
     },
     {
       id: '52',
       name: 'Arm Numbness',
       description: 'Numbness or tingling in the arm',
-      imageUrl: 'https://via.placeholder.com/150/96CEB4/FFFFFF?text=Arm+Numbness',
+      image: require('../assets/images/Arm Numbness.png'),
       symptoms: ['Numbness', 'Tingling', 'Weakness', 'Pain']
     },
     {
       id: '53',
       name: 'Arm Lump',
       description: 'Lump or growth in the arm',
-      imageUrl: 'https://via.placeholder.com/150/FFEAA7/FFFFFF?text=Arm+Lump',
+      image: require('../assets/images/Arm Lump.jpg'),
       symptoms: ['Arm lump', 'Pain', 'Swelling', 'Limited mobility']
     },
     {
       id: '54',
       name: 'Arm Weakness',
       description: 'Weakness or loss of strength in the arm',
-      imageUrl: 'https://via.placeholder.com/150/DDA0DD/FFFFFF?text=Arm+Weakness',
+      image: require('../assets/images/Arm Weakness.jpg'),
       symptoms: ['Weakness', 'Limited mobility', 'Pain', 'Numbness']
     }
   ],
@@ -445,28 +445,28 @@ const bodyPartSymptoms: Record<string, MedicalImage[]> = {
       id: '57',
       name: 'Arm Swelling',
       description: 'Swelling in the arm',
-      imageUrl: 'https://via.placeholder.com/150/45B7D1/FFFFFF?text=Arm+Swelling',
+      image: require('../assets/images/Arm Swelling.jpeg'),
       symptoms: ['Arm swelling', 'Pain', 'Limited mobility', 'Redness']
     },
     {
       id: '58',
       name: 'Arm Numbness',
       description: 'Numbness or tingling in the arm',
-      imageUrl: 'https://via.placeholder.com/150/96CEB4/FFFFFF?text=Arm+Numbness',
+      image: require('../assets/images/Arm Numbness.png'),
       symptoms: ['Numbness', 'Tingling', 'Weakness', 'Pain']
     },
     {
       id: '59',
       name: 'Arm Lump',
       description: 'Lump or growth in the arm',
-      imageUrl: 'https://via.placeholder.com/150/FFEAA7/FFFFFF?text=Arm+Lump',
+      image: require('../assets/images/Arm Lump.jpg'),
       symptoms: ['Arm lump', 'Pain', 'Swelling', 'Limited mobility']
     },
     {
       id: '60',
       name: 'Arm Weakness',
       description: 'Weakness or loss of strength in the arm',
-      imageUrl: 'https://via.placeholder.com/150/DDA0DD/FFFFFF?text=Arm+Weakness',
+      image: require('../assets/images/Arm Weakness.jpg'),
       symptoms: ['Weakness', 'Limited mobility', 'Pain', 'Numbness']
     }
   ],
@@ -475,42 +475,42 @@ const bodyPartSymptoms: Record<string, MedicalImage[]> = {
       id: '61',
       name: 'Leg Pain',
       description: 'Pain or discomfort in the leg',
-      imageUrl: 'https://via.placeholder.com/150/4ECDC4/FFFFFF?text=Leg+Pain',
+      image: require('../assets/images/Leg Pain.png'),
       symptoms: ['Leg pain', 'Numbness', 'Tingling', 'Weakness']
     },
     {
       id: '62',
       name: 'Leg Injury',
       description: 'Injury to the leg',
-      imageUrl: 'https://via.placeholder.com/150/45B7D1/FFFFFF?text=Leg+Injury',
+      image: require('../assets/images/Leg Injury.jpg'),
       symptoms: ['Leg pain', 'Bruising', 'Swelling', 'Limited mobility']
     },
     {
       id: '63',
       name: 'Leg Swelling',
       description: 'Swelling in the leg',
-      imageUrl: 'https://via.placeholder.com/150/45B7D1/FFFFFF?text=Leg+Swelling',
+      image: require('../assets/images/Leg Swelling.jpg'),
       symptoms: ['Leg swelling', 'Pain', 'Limited mobility', 'Redness']
     },
     {
       id: '64',
       name: 'Leg Numbness',
       description: 'Numbness or tingling in the leg',
-      imageUrl: 'https://via.placeholder.com/150/96CEB4/FFFFFF?text=Leg+Numbness',
+      image: require('../assets/images/Leg Numbness.jpeg'),
       symptoms: ['Numbness', 'Tingling', 'Weakness', 'Pain']
     },
     {
       id: '65',
       name: 'Leg Lump',
       description: 'Lump or growth in the leg',
-      imageUrl: 'https://via.placeholder.com/150/FFEAA7/FFFFFF?text=Leg+Lump',
+      image: require('../assets/images/Leg Lump.jpg'),
       symptoms: ['Leg lump', 'Pain', 'Swelling', 'Limited mobility']
     },
     {
       id: '66',
       name: 'Leg Weakness',
       description: 'Weakness or loss of strength in the leg',
-      imageUrl: 'https://via.placeholder.com/150/DDA0DD/FFFFFF?text=Leg+Weakness',
+      image: require('../assets/images/Leg Weakness.jpg'),
       symptoms: ['Weakness', 'Limited mobility', 'Pain', 'Numbness']
     }
   ],
@@ -519,42 +519,42 @@ const bodyPartSymptoms: Record<string, MedicalImage[]> = {
       id: '67',
       name: 'Leg Pain',
       description: 'Pain or discomfort in the leg',
-      imageUrl: 'https://via.placeholder.com/150/4ECDC4/FFFFFF?text=Leg+Pain',
+      image: require('../assets/images/Leg Pain.png'),
       symptoms: ['Leg pain', 'Numbness', 'Tingling', 'Weakness']
     },
     {
       id: '68',
       name: 'Leg Injury',
       description: 'Injury to the leg',
-      imageUrl: 'https://via.placeholder.com/150/45B7D1/FFFFFF?text=Leg+Injury',
+      image: require('../assets/images/Leg Injury.jpg'),
       symptoms: ['Leg pain', 'Bruising', 'Swelling', 'Limited mobility']
     },
     {
       id: '69',
       name: 'Leg Swelling',
       description: 'Swelling in the leg',
-      imageUrl: 'https://via.placeholder.com/150/45B7D1/FFFFFF?text=Leg+Swelling',
+      image: require('../assets/images/Leg Swelling.jpg'),
       symptoms: ['Leg swelling', 'Pain', 'Limited mobility', 'Redness']
     },
     {
       id: '70',
       name: 'Leg Numbness',
       description: 'Numbness or tingling in the leg',
-      imageUrl: 'https://via.placeholder.com/150/96CEB4/FFFFFF?text=Leg+Numbness',
+      image: require('../assets/images/Leg Numbness.jpeg'),
       symptoms: ['Numbness', 'Tingling', 'Weakness', 'Pain']
     },
     {
       id: '71',
       name: 'Leg Lump',
       description: 'Lump or growth in the leg',
-      imageUrl: 'https://via.placeholder.com/150/FFEAA7/FFFFFF?text=Leg+Lump',
+      image: require('../assets/images/Leg Lump.jpg'),
       symptoms: ['Leg lump', 'Pain', 'Swelling', 'Limited mobility']
     },
     {
       id: '72',
       name: 'Leg Weakness',
       description: 'Weakness or loss of strength in the leg',
-      imageUrl: 'https://via.placeholder.com/150/DDA0DD/FFFFFF?text=Leg+Weakness',
+      image: require('../assets/images/Leg Weakness.jpg'),
       symptoms: ['Weakness', 'Limited mobility', 'Pain', 'Numbness']
     }
   ],
