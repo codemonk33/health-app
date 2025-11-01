@@ -79,28 +79,28 @@ const bodyPartSymptoms: Record<string, MedicalImage[]> = {
       id: '7',
       name: 'Headache',
       description: 'Severe headache',
-      imageUrl: 'https://via.placeholder.com/150/4ECDC4/FFFFFF?text=Headache',
+      image: require('../assets/images/Headache.png'),
       symptoms: ['Headache', 'Nausea', 'Vomiting', 'Sensitivity to light']
     },
     {
       id: '8',
       name: 'Dizziness',
       description: 'Feeling lightheaded or dizzy',
-      imageUrl: 'https://via.placeholder.com/150/45B7D1/FFFFFF?text=Dizziness',
+      image: require('../assets/images/Dizziness.png'),
       symptoms: ['Dizziness', 'Vertigo', 'Balance problems', 'Fainting']
     },
     {
       id: '9',
       name: 'Tinnitus',
       description: 'Ringing or buzzing in the ears',
-      imageUrl: 'https://via.placeholder.com/150/45B7D1/FFFFFF?text=Tinnitus',
+      image: require('../assets/images/Tinnitus.png'),
       symptoms: ['Tinnitus', 'Hearing loss', 'Ear pain', 'Vertigo']
     },
     {
       id: '10',
       name: 'Migraine',
       description: 'Severe headache with visual disturbances',
-      imageUrl: 'https://via.placeholder.com/150/96CEB4/FFFFFF?text=Migraine',
+      image: require('../assets/images/Migraine.png'),
       symptoms: ['Migraine', 'Aura', 'Nausea', 'Sensitivity to light']
     },
     {
@@ -123,7 +123,7 @@ const bodyPartSymptoms: Record<string, MedicalImage[]> = {
       id: '13',
       name: 'Earache',
       description: 'Pain in the ear',
-      imageUrl: 'https://via.placeholder.com/150/4ECDC4/FFFFFF?text=Earache',
+      image: require('../assets/images/Earache.png'),
       symptoms: ['Earache', 'Hearing loss', 'Tinnitus', 'Dizziness']
     },
     {
@@ -137,14 +137,14 @@ const bodyPartSymptoms: Record<string, MedicalImage[]> = {
       id: '15',
       name: 'Tinnitus',
       description: 'Ringing or buzzing in the ears',
-      imageUrl: 'https://via.placeholder.com/150/45B7D1/FFFFFF?text=Tinnitus',
+      image: require('../assets/images/Tinnitus.png'),
       symptoms: ['Tinnitus', 'Hearing loss', 'Ear pain', 'Vertigo']
     },
     {
       id: '16',
       name: 'Earwax Buildup',
       description: 'Excessive earwax accumulation',
-      imageUrl: 'https://via.placeholder.com/150/96CEB4/FFFFFF?text=Earwax+Buildup',
+      image: require('../assets/images/Earwax Buildup.png'),
       symptoms: ['Earwax buildup', 'Itching', 'Hearing loss', 'Dizziness']
     },
     {
@@ -158,7 +158,7 @@ const bodyPartSymptoms: Record<string, MedicalImage[]> = {
       id: '18',
       name: 'Ear Deafness',
       description: 'Loss of hearing in the ear',
-      imageUrl: 'https://via.placeholder.com/150/DDA0DD/FFFFFF?text=Ear+Deafness',
+      image: require('../assets/images/Ear Deafness.png'),
       symptoms: ['Hearing loss', 'Tinnitus', 'Balance problems', 'Vertigo']
     }
   ],
@@ -181,7 +181,7 @@ const bodyPartSymptoms: Record<string, MedicalImage[]> = {
       id: '21',
       name: 'Nosebleed',
       description: 'Bleeding from the nose',
-      imageUrl: 'https://via.placeholder.com/150/45B7D1/FFFFFF?text=Nosebleed',
+      image: require('../assets/images/Nosebleed.png'),
       symptoms: ['Nosebleed', 'Nasal congestion', 'Headache', 'Dizziness']
     },
     {
@@ -202,7 +202,7 @@ const bodyPartSymptoms: Record<string, MedicalImage[]> = {
       id: '24',
       name: 'Nose Deformity',
       description: 'Abnormal shape or structure of the nose',
-      imageUrl: 'https://via.placeholder.com/150/DDA0DD/FFFFFF?text=Nose+Deformity',
+      image: require('../assets/images/Nose Deformity.png'),
       symptoms: ['Nasal obstruction', 'Facial asymmetry', 'Breathing difficulties', 'Cosmetic concerns']
     }
   ],
@@ -211,35 +211,35 @@ const bodyPartSymptoms: Record<string, MedicalImage[]> = {
       id: '25',
       name: 'Toothache',
       description: 'Pain in a tooth',
-      imageUrl: 'https://via.placeholder.com/150/4ECDC4/FFFFFF?text=Toothache',
+      image: require('../assets/images/Toothache.png'),
       symptoms: ['Toothache', 'Sensitivity to heat/cold', 'Swelling', 'Pus']
     },
     {
       id: '26',
       name: 'Gum Infection',
       description: 'Inflammation or infection of the gums',
-      imageUrl: 'https://via.placeholder.com/150/45B7D1/FFFFFF?text=Gum+Infection',
+      image: require('../assets/images/Gum Infection.png'),
       symptoms: ['Gum pain', 'Redness', 'Swelling', 'Bleeding']
     },
     {
       id: '27',
       name: 'Bad Breath',
       description: 'Persistent bad breath',
-      imageUrl: 'https://via.placeholder.com/150/45B7D1/FFFFFF?text=Bad+Breath',
+      image: require('../assets/images/Bad Breath.png'),
       symptoms: ['Bad breath', 'Halitosis', 'Dental plaque', 'Gum disease']
     },
     {
       id: '28',
       name: 'Tooth Decay',
       description: 'Holes or cavities in the teeth',
-      imageUrl: 'https://via.placeholder.com/150/96CEB4/FFFFFF?text=Tooth+Decay',
+      image: require('../assets/images/Tooth Decay.png'),
       symptoms: ['Toothache', 'Sensitivity to sweet foods', 'Tooth discoloration', 'Tooth loss']
     },
     {
       id: '29',
       name: 'Tooth Loss',
       description: 'Loss of one or more teeth',
-      imageUrl: 'https://via.placeholder.com/150/FFEAA7/FFFFFF?text=Tooth+Loss',
+      image: require('../assets/images/Tooth Loss.png'),
       symptoms: ['Tooth loss', 'Gum recession', 'Bite problems', 'Speech difficulties']
     },
     {
@@ -255,14 +255,14 @@ const bodyPartSymptoms: Record<string, MedicalImage[]> = {
       id: '31',
       name: 'Neck Pain',
       description: 'Pain or discomfort in the neck',
-      imageUrl: 'https://via.placeholder.com/150/4ECDC4/FFFFFF?text=Neck+Pain',
+      image: require('../assets/images/Neck Pain.png'),
       symptoms: ['Neck pain', 'Headache', 'Stiffness', 'Limited mobility']
     },
     {
       id: '32',
       name: 'Whiplash',
       description: 'Neck injury from a sudden jerking motion',
-      imageUrl: 'https://via.placeholder.com/150/45B7D1/FFFFFF?text=Whiplash',
+      image: require('../assets/images/Whiplash.png'),
       symptoms: ['Neck pain', 'Headache', 'Stiffness', 'Dizziness']
     },
     {
@@ -276,14 +276,14 @@ const bodyPartSymptoms: Record<string, MedicalImage[]> = {
       id: '34',
       name: 'Neck Swelling',
       description: 'Swelling in the neck area',
-      imageUrl: 'https://via.placeholder.com/150/96CEB4/FFFFFF?text=Neck+Swelling',
+      image: require('../assets/images/Neck Swelling.png'),
       symptoms: ['Neck swelling', 'Pain', 'Limited mobility', 'Breathing difficulties']
     },
     {
       id: '35',
       name: 'Neck Stiffness',
       description: 'Neck stiffness or limited mobility',
-      imageUrl: 'https://via.placeholder.com/150/FFEAA7/FFFFFF?text=Neck+Stiffness',
+      image: require('../assets/images/Neck Stiffness.png'),
       symptoms: ['Neck stiffness', 'Limited mobility', 'Headache', 'Dizziness']
     },
     {
@@ -299,28 +299,28 @@ const bodyPartSymptoms: Record<string, MedicalImage[]> = {
       id: '37',
       name: 'Chest Pain',
       description: 'Pain or discomfort in the chest',
-      imageUrl: 'https://via.placeholder.com/150/4ECDC4/FFFFFF?text=Chest+Pain',
+      image: require('../assets/images/Chest Pain.png'),
       symptoms: ['Chest pain', 'Shortness of breath', 'Heartburn', 'Cough']
     },
     {
       id: '38',
       name: 'Heart Attack',
       description: 'Severe chest pain or discomfort',
-      imageUrl: 'https://via.placeholder.com/150/45B7D1/FFFFFF?text=Heart+Attack',
+      image: require('../assets/images/Heart Attack.png'),
       symptoms: ['Chest pain', 'Shortness of breath', 'Nausea', 'Sweating']
     },
     {
       id: '39',
       name: 'Breathing Difficulties',
       description: 'Difficulty breathing',
-      imageUrl: 'https://via.placeholder.com/150/45B7D1/FFFFFF?text=Breathing+Difficulties',
+      image: require('../assets/images/Breathing Difficulties.png'),
       symptoms: ['Shortness of breath', 'Wheezing', 'Cough', 'Chest tightness']
     },
     {
       id: '40',
       name: 'Chest Injury',
       description: 'Injury to the chest',
-      imageUrl: 'https://via.placeholder.com/150/96CEB4/FFFFFF?text=Chest+Injury',
+      image: require('../assets/images/Chest Injury.png'),
       symptoms: ['Chest pain', 'Bruising', 'Swelling', 'Breathing difficulties']
     },
     {
@@ -343,35 +343,35 @@ const bodyPartSymptoms: Record<string, MedicalImage[]> = {
       id: '43',
       name: 'Stomachache',
       description: 'Pain or discomfort in the stomach',
-      imageUrl: 'https://via.placeholder.com/150/4ECDC4/FFFFFF?text=Stomachache',
+      image: require('../assets/images/Stomachache.png'),
       symptoms: ['Stomachache', 'Nausea', 'Vomiting', 'Bloating']
     },
     {
       id: '44',
       name: 'Indigestion',
       description: 'Difficulty digesting food',
-      imageUrl: 'https://via.placeholder.com/150/45B7D1/FFFFFF?text=Indigestion',
+      image: require('../assets/images/indigestion stomach.png'),
       symptoms: ['Stomachache', 'Bloating', 'Heartburn', 'Nausea']
     },
     {
       id: '45',
       name: 'Heartburn',
       description: 'Burning sensation in the chest',
-      imageUrl: 'https://via.placeholder.com/150/45B7D1/FFFFFF?text=Heartburn',
+      image: require('../assets/images/Heartburn.png'),
       symptoms: ['Heartburn', 'Chest pain', 'Regurgitation', 'Nausea']
     },
     {
       id: '46',
       name: 'Stomach Infection',
       description: 'Infection in the stomach',
-      imageUrl: 'https://via.placeholder.com/150/96CEB4/FFFFFF?text=Stomach+Infection',
+      image: require('../assets/images/Stomach Infection.png'),
       symptoms: ['Stomachache', 'Nausea', 'Vomiting', 'Fever']
     },
     {
       id: '47',
       name: 'Stomach Ulcer',
       description: 'Sore or ulcer in the stomach',
-      imageUrl: 'https://via.placeholder.com/150/FFEAA7/FFFFFF?text=Stomach+Ulcer',
+      image: require('../assets/images/Stomach Ulcer.png'),
       symptoms: ['Stomachache', 'Bloating', 'Nausea', 'Vomiting']
     },
     {
@@ -387,14 +387,14 @@ const bodyPartSymptoms: Record<string, MedicalImage[]> = {
       id: '49',
       name: 'Arm Pain',
       description: 'Pain or discomfort in the arm',
-      imageUrl: 'https://via.placeholder.com/150/4ECDC4/FFFFFF?text=Arm+Pain',
+      image: require('../assets/images/Arm Pain.png'),
       symptoms: ['Arm pain', 'Numbness', 'Tingling', 'Weakness']
     },
     {
       id: '50',
       name: 'Arm Injury',
       description: 'Injury to the arm',
-      imageUrl: 'https://via.placeholder.com/150/45B7D1/FFFFFF?text=Arm+Injury',
+      image: require('../assets/images/Arm Injury.png'),
       symptoms: ['Arm pain', 'Bruising', 'Swelling', 'Limited mobility']
     },
     {
@@ -431,14 +431,14 @@ const bodyPartSymptoms: Record<string, MedicalImage[]> = {
       id: '55',
       name: 'Arm Pain',
       description: 'Pain or discomfort in the arm',
-      imageUrl: 'https://via.placeholder.com/150/4ECDC4/FFFFFF?text=Arm+Pain',
+      image: require('../assets/images/Arm Pain.png'),
       symptoms: ['Arm pain', 'Numbness', 'Tingling', 'Weakness']
     },
     {
       id: '56',
       name: 'Arm Injury',
       description: 'Injury to the arm',
-      imageUrl: 'https://via.placeholder.com/150/45B7D1/FFFFFF?text=Arm+Injury',
+      image: require('../assets/images/Arm Injury.png'),
       symptoms: ['Arm pain', 'Bruising', 'Swelling', 'Limited mobility']
     },
     {
