@@ -7,60 +7,569 @@ interface MedicalImage {
   id: string;
   name: string;
   description: string;
-  imageUrl: string;
+  imageUrl?: string;
+  image?: any; // For local require() images
   symptoms: string[];
 }
 
-export default function BodyPartDetailScreen() {
-  const router = useRouter();
-  const { part } = useLocalSearchParams<{ part: string }>();
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+// Map body parts to doctor specialties
+const bodyPartToSpecialty: Record<string, string> = {
+  'Head': 'Neurologist',
+  'Eyes': 'Ophthalmologist',
+  'Ears': 'ENT Specialist',
+  'Nose': 'ENT Specialist',
+  'Mouth': 'Dentist',
+  'Neck': 'ENT Specialist',
+  'Chest': 'Cardiologist',
+  'Stomach': 'Gastroenterologist',
+  'Left Arm': 'Orthopedic Surgeon',
+  'Right Arm': 'Orthopedic Surgeon',
+  'Left Leg': 'Orthopedic Surgeon',
+  'Right Leg': 'Orthopedic Surgeon',
+};
 
-  // Mock medical images data - in real app, this would come from an API
-  const medicalImages: MedicalImage[] = [
+// Mock medical images data - in real app, this would come from an API
+const bodyPartSymptoms: Record<string, MedicalImage[]> = {
+  'Eyes': [
     {
       id: '1',
       name: 'Redness',
       description: 'Eye redness and irritation',
-      imageUrl: 'https://via.placeholder.com/150/FF6B6B/FFFFFF?text=Redness',
+      image: require('../assets/images/eye redness.jpg'),
       symptoms: ['Redness', 'Irritation', 'Itching', 'Watery eyes']
     },
     {
       id: '2',
       name: 'Swelling',
       description: 'Swollen and puffy appearance',
-      imageUrl: 'https://via.placeholder.com/150/4ECDC4/FFFFFF?text=Swelling',
+      image: require('../assets/images/swelling eye.jpeg'),
       symptoms: ['Swelling', 'Pain', 'Tenderness', 'Difficulty opening']
     },
     {
       id: '3',
       name: 'Discharge',
       description: 'Yellow or green discharge',
-      imageUrl: 'https://via.placeholder.com/150/45B7D1/FFFFFF?text=Discharge',
+      image: require('../assets/images/eye discharge.jpg'),
       symptoms: ['Discharge', 'Crusting', 'Sticky eyelids', 'Blurred vision']
     },
     {
       id: '4',
       name: 'Dryness',
       description: 'Dry and irritated eyes',
-      imageUrl: 'https://via.placeholder.com/150/96CEB4/FFFFFF?text=Dryness',
+      image: require('../assets/images/dry eyes.jpg'),
       symptoms: ['Dryness', 'Burning', 'Gritty feeling', 'Light sensitivity']
     },
     {
       id: '5',
       name: 'Bruising',
       description: 'Dark circles and bruising',
-      imageUrl: 'https://via.placeholder.com/150/FFEAA7/FFFFFF?text=Bruising',
+      image: require('../assets/images/eye bruising.webp'),
       symptoms: ['Bruising', 'Dark circles', 'Pain', 'Tenderness']
     },
     {
       id: '6',
       name: 'Rash',
       description: 'Skin rash around the area',
-      imageUrl: 'https://via.placeholder.com/150/DDA0DD/FFFFFF?text=Rash',
+      image: require('../assets/images/eye rash.jpg'),
       symptoms: ['Rash', 'Itching', 'Redness', 'Bumps']
     }
-  ];
+  ],
+  'Head': [
+    {
+      id: '7',
+      name: 'Headache',
+      description: 'Severe headache',
+      imageUrl: 'https://via.placeholder.com/150/4ECDC4/FFFFFF?text=Headache',
+      symptoms: ['Headache', 'Nausea', 'Vomiting', 'Sensitivity to light']
+    },
+    {
+      id: '8',
+      name: 'Dizziness',
+      description: 'Feeling lightheaded or dizzy',
+      imageUrl: 'https://via.placeholder.com/150/45B7D1/FFFFFF?text=Dizziness',
+      symptoms: ['Dizziness', 'Vertigo', 'Balance problems', 'Fainting']
+    },
+    {
+      id: '9',
+      name: 'Tinnitus',
+      description: 'Ringing or buzzing in the ears',
+      imageUrl: 'https://via.placeholder.com/150/45B7D1/FFFFFF?text=Tinnitus',
+      symptoms: ['Tinnitus', 'Hearing loss', 'Ear pain', 'Vertigo']
+    },
+    {
+      id: '10',
+      name: 'Migraine',
+      description: 'Severe headache with visual disturbances',
+      imageUrl: 'https://via.placeholder.com/150/96CEB4/FFFFFF?text=Migraine',
+      symptoms: ['Migraine', 'Aura', 'Nausea', 'Sensitivity to light']
+    },
+    {
+      id: '11',
+      name: 'Concussion',
+      description: 'Head injury causing confusion',
+      imageUrl: 'https://via.placeholder.com/150/FFEAA7/FFFFFF?text=Concussion',
+      symptoms: ['Confusion', 'Memory loss', 'Headache', 'Dizziness']
+    },
+    {
+      id: '12',
+      name: 'Facial Pain',
+      description: 'Pain or numbness in the face',
+      imageUrl: 'https://via.placeholder.com/150/DDA0DD/FFFFFF?text=Facial+Pain',
+      symptoms: ['Facial pain', 'Numbness', 'Tingling', 'Headache']
+    }
+  ],
+  'Ears': [
+    {
+      id: '13',
+      name: 'Earache',
+      description: 'Pain in the ear',
+      imageUrl: 'https://via.placeholder.com/150/4ECDC4/FFFFFF?text=Earache',
+      symptoms: ['Earache', 'Hearing loss', 'Tinnitus', 'Dizziness']
+    },
+    {
+      id: '14',
+      name: 'Ear Infection',
+      description: 'Inflammation or infection in the ear',
+      imageUrl: 'https://via.placeholder.com/150/45B7D1/FFFFFF?text=Ear+Infection',
+      symptoms: ['Earache', 'Fever', 'Drainage', 'Hearing loss']
+    },
+    {
+      id: '15',
+      name: 'Tinnitus',
+      description: 'Ringing or buzzing in the ears',
+      imageUrl: 'https://via.placeholder.com/150/45B7D1/FFFFFF?text=Tinnitus',
+      symptoms: ['Tinnitus', 'Hearing loss', 'Ear pain', 'Vertigo']
+    },
+    {
+      id: '16',
+      name: 'Earwax Buildup',
+      description: 'Excessive earwax accumulation',
+      imageUrl: 'https://via.placeholder.com/150/96CEB4/FFFFFF?text=Earwax+Buildup',
+      symptoms: ['Earwax buildup', 'Itching', 'Hearing loss', 'Dizziness']
+    },
+    {
+      id: '17',
+      name: 'Ear Injury',
+      description: 'Injury to the outer ear',
+      imageUrl: 'https://via.placeholder.com/150/FFEAA7/FFFFFF?text=Ear+Injury',
+      symptoms: ['Ear pain', 'Bleeding', 'Hearing loss', 'Dizziness']
+    },
+    {
+      id: '18',
+      name: 'Ear Deafness',
+      description: 'Loss of hearing in the ear',
+      imageUrl: 'https://via.placeholder.com/150/DDA0DD/FFFFFF?text=Ear+Deafness',
+      symptoms: ['Hearing loss', 'Tinnitus', 'Balance problems', 'Vertigo']
+    }
+  ],
+  'Nose': [
+    {
+      id: '19',
+      name: 'Nasal Congestion',
+      description: 'Blocked nose',
+      imageUrl: 'https://via.placeholder.com/150/4ECDC4/FFFFFF?text=Nasal+Congestion',
+      symptoms: ['Nasal congestion', 'Sneezing', 'Runny nose', 'Postnasal drip']
+    },
+    {
+      id: '20',
+      name: 'Sinus Infection',
+      description: 'Inflammation or infection in the sinuses',
+      imageUrl: 'https://via.placeholder.com/150/45B7D1/FFFFFF?text=Sinus+Infection',
+      symptoms: ['Nasal congestion', 'Facial pain', 'Headache', 'Fever']
+    },
+    {
+      id: '21',
+      name: 'Nosebleed',
+      description: 'Bleeding from the nose',
+      imageUrl: 'https://via.placeholder.com/150/45B7D1/FFFFFF?text=Nosebleed',
+      symptoms: ['Nosebleed', 'Nasal congestion', 'Headache', 'Dizziness']
+    },
+    {
+      id: '22',
+      name: 'Nasal Polyps',
+      description: 'Noncancerous growths in the nasal passages',
+      imageUrl: 'https://via.placeholder.com/150/96CEB4/FFFFFF?text=Nasal+Polyps',
+      symptoms: ['Nasal congestion', 'Sneezing', 'Postnasal drip', 'Facial pain']
+    },
+    {
+      id: '23',
+      name: 'Nose Injury',
+      description: 'Injury to the nose',
+      imageUrl: 'https://via.placeholder.com/150/FFEAA7/FFFFFF?text=Nose+Injury',
+      symptoms: ['Nosebleed', 'Nasal congestion', 'Facial pain', 'Headache']
+    },
+    {
+      id: '24',
+      name: 'Nose Deformity',
+      description: 'Abnormal shape or structure of the nose',
+      imageUrl: 'https://via.placeholder.com/150/DDA0DD/FFFFFF?text=Nose+Deformity',
+      symptoms: ['Nasal obstruction', 'Facial asymmetry', 'Breathing difficulties', 'Cosmetic concerns']
+    }
+  ],
+  'Mouth': [
+    {
+      id: '25',
+      name: 'Toothache',
+      description: 'Pain in a tooth',
+      imageUrl: 'https://via.placeholder.com/150/4ECDC4/FFFFFF?text=Toothache',
+      symptoms: ['Toothache', 'Sensitivity to heat/cold', 'Swelling', 'Pus']
+    },
+    {
+      id: '26',
+      name: 'Gum Infection',
+      description: 'Inflammation or infection of the gums',
+      imageUrl: 'https://via.placeholder.com/150/45B7D1/FFFFFF?text=Gum+Infection',
+      symptoms: ['Gum pain', 'Redness', 'Swelling', 'Bleeding']
+    },
+    {
+      id: '27',
+      name: 'Bad Breath',
+      description: 'Persistent bad breath',
+      imageUrl: 'https://via.placeholder.com/150/45B7D1/FFFFFF?text=Bad+Breath',
+      symptoms: ['Bad breath', 'Halitosis', 'Dental plaque', 'Gum disease']
+    },
+    {
+      id: '28',
+      name: 'Tooth Decay',
+      description: 'Holes or cavities in the teeth',
+      imageUrl: 'https://via.placeholder.com/150/96CEB4/FFFFFF?text=Tooth+Decay',
+      symptoms: ['Toothache', 'Sensitivity to sweet foods', 'Tooth discoloration', 'Tooth loss']
+    },
+    {
+      id: '29',
+      name: 'Tooth Loss',
+      description: 'Loss of one or more teeth',
+      imageUrl: 'https://via.placeholder.com/150/FFEAA7/FFFFFF?text=Tooth+Loss',
+      symptoms: ['Tooth loss', 'Gum recession', 'Bite problems', 'Speech difficulties']
+    },
+    {
+      id: '30',
+      name: 'Mouth Injury',
+      description: 'Injury to the mouth or lips',
+      imageUrl: 'https://via.placeholder.com/150/DDA0DD/FFFFFF?text=Mouth+Injury',
+      symptoms: ['Mouth pain', 'Bleeding', 'Swelling', 'Lip injury']
+    }
+  ],
+  'Neck': [
+    {
+      id: '31',
+      name: 'Neck Pain',
+      description: 'Pain or discomfort in the neck',
+      imageUrl: 'https://via.placeholder.com/150/4ECDC4/FFFFFF?text=Neck+Pain',
+      symptoms: ['Neck pain', 'Headache', 'Stiffness', 'Limited mobility']
+    },
+    {
+      id: '32',
+      name: 'Whiplash',
+      description: 'Neck injury from a sudden jerking motion',
+      imageUrl: 'https://via.placeholder.com/150/45B7D1/FFFFFF?text=Whiplash',
+      symptoms: ['Neck pain', 'Headache', 'Stiffness', 'Dizziness']
+    },
+    {
+      id: '33',
+      name: 'Neck Injury',
+      description: 'Injury to the neck',
+      imageUrl: 'https://via.placeholder.com/150/45B7D1/FFFFFF?text=Neck+Injury',
+      symptoms: ['Neck pain', 'Headache', 'Stiffness', 'Numbness']
+    },
+    {
+      id: '34',
+      name: 'Neck Swelling',
+      description: 'Swelling in the neck area',
+      imageUrl: 'https://via.placeholder.com/150/96CEB4/FFFFFF?text=Neck+Swelling',
+      symptoms: ['Neck swelling', 'Pain', 'Limited mobility', 'Breathing difficulties']
+    },
+    {
+      id: '35',
+      name: 'Neck Stiffness',
+      description: 'Neck stiffness or limited mobility',
+      imageUrl: 'https://via.placeholder.com/150/FFEAA7/FFFFFF?text=Neck+Stiffness',
+      symptoms: ['Neck stiffness', 'Limited mobility', 'Headache', 'Dizziness']
+    },
+    {
+      id: '36',
+      name: 'Neck Lump',
+      description: 'Lump or growth in the neck area',
+      imageUrl: 'https://via.placeholder.com/150/DDA0DD/FFFFFF?text=Neck+Lump',
+      symptoms: ['Neck lump', 'Pain', 'Swelling', 'Headache']
+    }
+  ],
+  'Chest': [
+    {
+      id: '37',
+      name: 'Chest Pain',
+      description: 'Pain or discomfort in the chest',
+      imageUrl: 'https://via.placeholder.com/150/4ECDC4/FFFFFF?text=Chest+Pain',
+      symptoms: ['Chest pain', 'Shortness of breath', 'Heartburn', 'Cough']
+    },
+    {
+      id: '38',
+      name: 'Heart Attack',
+      description: 'Severe chest pain or discomfort',
+      imageUrl: 'https://via.placeholder.com/150/45B7D1/FFFFFF?text=Heart+Attack',
+      symptoms: ['Chest pain', 'Shortness of breath', 'Nausea', 'Sweating']
+    },
+    {
+      id: '39',
+      name: 'Breathing Difficulties',
+      description: 'Difficulty breathing',
+      imageUrl: 'https://via.placeholder.com/150/45B7D1/FFFFFF?text=Breathing+Difficulties',
+      symptoms: ['Shortness of breath', 'Wheezing', 'Cough', 'Chest tightness']
+    },
+    {
+      id: '40',
+      name: 'Chest Injury',
+      description: 'Injury to the chest',
+      imageUrl: 'https://via.placeholder.com/150/96CEB4/FFFFFF?text=Chest+Injury',
+      symptoms: ['Chest pain', 'Bruising', 'Swelling', 'Breathing difficulties']
+    },
+    {
+      id: '41',
+      name: 'Chest Lump',
+      description: 'Lump or growth in the chest area',
+      imageUrl: 'https://via.placeholder.com/150/FFEAA7/FFFFFF?text=Chest+Lump',
+      symptoms: ['Chest lump', 'Pain', 'Swelling', 'Breathing difficulties']
+    },
+    {
+      id: '42',
+      name: 'Chest Swelling',
+      description: 'Swelling in the chest area',
+      imageUrl: 'https://via.placeholder.com/150/DDA0DD/FFFFFF?text=Chest+Swelling',
+      symptoms: ['Chest swelling', 'Pain', 'Breathing difficulties', 'Cough']
+    }
+  ],
+  'Stomach': [
+    {
+      id: '43',
+      name: 'Stomachache',
+      description: 'Pain or discomfort in the stomach',
+      imageUrl: 'https://via.placeholder.com/150/4ECDC4/FFFFFF?text=Stomachache',
+      symptoms: ['Stomachache', 'Nausea', 'Vomiting', 'Bloating']
+    },
+    {
+      id: '44',
+      name: 'Indigestion',
+      description: 'Difficulty digesting food',
+      imageUrl: 'https://via.placeholder.com/150/45B7D1/FFFFFF?text=Indigestion',
+      symptoms: ['Stomachache', 'Bloating', 'Heartburn', 'Nausea']
+    },
+    {
+      id: '45',
+      name: 'Heartburn',
+      description: 'Burning sensation in the chest',
+      imageUrl: 'https://via.placeholder.com/150/45B7D1/FFFFFF?text=Heartburn',
+      symptoms: ['Heartburn', 'Chest pain', 'Regurgitation', 'Nausea']
+    },
+    {
+      id: '46',
+      name: 'Stomach Infection',
+      description: 'Infection in the stomach',
+      imageUrl: 'https://via.placeholder.com/150/96CEB4/FFFFFF?text=Stomach+Infection',
+      symptoms: ['Stomachache', 'Nausea', 'Vomiting', 'Fever']
+    },
+    {
+      id: '47',
+      name: 'Stomach Ulcer',
+      description: 'Sore or ulcer in the stomach',
+      imageUrl: 'https://via.placeholder.com/150/FFEAA7/FFFFFF?text=Stomach+Ulcer',
+      symptoms: ['Stomachache', 'Bloating', 'Nausea', 'Vomiting']
+    },
+    {
+      id: '48',
+      name: 'Stomach Lump',
+      description: 'Lump or growth in the stomach area',
+      imageUrl: 'https://via.placeholder.com/150/DDA0DD/FFFFFF?text=Stomach+Lump',
+      symptoms: ['Stomach lump', 'Pain', 'Swelling', 'Bloating']
+    }
+  ],
+  'Left Arm': [
+    {
+      id: '49',
+      name: 'Arm Pain',
+      description: 'Pain or discomfort in the arm',
+      imageUrl: 'https://via.placeholder.com/150/4ECDC4/FFFFFF?text=Arm+Pain',
+      symptoms: ['Arm pain', 'Numbness', 'Tingling', 'Weakness']
+    },
+    {
+      id: '50',
+      name: 'Arm Injury',
+      description: 'Injury to the arm',
+      imageUrl: 'https://via.placeholder.com/150/45B7D1/FFFFFF?text=Arm+Injury',
+      symptoms: ['Arm pain', 'Bruising', 'Swelling', 'Limited mobility']
+    },
+    {
+      id: '51',
+      name: 'Arm Swelling',
+      description: 'Swelling in the arm',
+      imageUrl: 'https://via.placeholder.com/150/45B7D1/FFFFFF?text=Arm+Swelling',
+      symptoms: ['Arm swelling', 'Pain', 'Limited mobility', 'Redness']
+    },
+    {
+      id: '52',
+      name: 'Arm Numbness',
+      description: 'Numbness or tingling in the arm',
+      imageUrl: 'https://via.placeholder.com/150/96CEB4/FFFFFF?text=Arm+Numbness',
+      symptoms: ['Numbness', 'Tingling', 'Weakness', 'Pain']
+    },
+    {
+      id: '53',
+      name: 'Arm Lump',
+      description: 'Lump or growth in the arm',
+      imageUrl: 'https://via.placeholder.com/150/FFEAA7/FFFFFF?text=Arm+Lump',
+      symptoms: ['Arm lump', 'Pain', 'Swelling', 'Limited mobility']
+    },
+    {
+      id: '54',
+      name: 'Arm Weakness',
+      description: 'Weakness or loss of strength in the arm',
+      imageUrl: 'https://via.placeholder.com/150/DDA0DD/FFFFFF?text=Arm+Weakness',
+      symptoms: ['Weakness', 'Limited mobility', 'Pain', 'Numbness']
+    }
+  ],
+  'Right Arm': [
+    {
+      id: '55',
+      name: 'Arm Pain',
+      description: 'Pain or discomfort in the arm',
+      imageUrl: 'https://via.placeholder.com/150/4ECDC4/FFFFFF?text=Arm+Pain',
+      symptoms: ['Arm pain', 'Numbness', 'Tingling', 'Weakness']
+    },
+    {
+      id: '56',
+      name: 'Arm Injury',
+      description: 'Injury to the arm',
+      imageUrl: 'https://via.placeholder.com/150/45B7D1/FFFFFF?text=Arm+Injury',
+      symptoms: ['Arm pain', 'Bruising', 'Swelling', 'Limited mobility']
+    },
+    {
+      id: '57',
+      name: 'Arm Swelling',
+      description: 'Swelling in the arm',
+      imageUrl: 'https://via.placeholder.com/150/45B7D1/FFFFFF?text=Arm+Swelling',
+      symptoms: ['Arm swelling', 'Pain', 'Limited mobility', 'Redness']
+    },
+    {
+      id: '58',
+      name: 'Arm Numbness',
+      description: 'Numbness or tingling in the arm',
+      imageUrl: 'https://via.placeholder.com/150/96CEB4/FFFFFF?text=Arm+Numbness',
+      symptoms: ['Numbness', 'Tingling', 'Weakness', 'Pain']
+    },
+    {
+      id: '59',
+      name: 'Arm Lump',
+      description: 'Lump or growth in the arm',
+      imageUrl: 'https://via.placeholder.com/150/FFEAA7/FFFFFF?text=Arm+Lump',
+      symptoms: ['Arm lump', 'Pain', 'Swelling', 'Limited mobility']
+    },
+    {
+      id: '60',
+      name: 'Arm Weakness',
+      description: 'Weakness or loss of strength in the arm',
+      imageUrl: 'https://via.placeholder.com/150/DDA0DD/FFFFFF?text=Arm+Weakness',
+      symptoms: ['Weakness', 'Limited mobility', 'Pain', 'Numbness']
+    }
+  ],
+  'Left Leg': [
+    {
+      id: '61',
+      name: 'Leg Pain',
+      description: 'Pain or discomfort in the leg',
+      imageUrl: 'https://via.placeholder.com/150/4ECDC4/FFFFFF?text=Leg+Pain',
+      symptoms: ['Leg pain', 'Numbness', 'Tingling', 'Weakness']
+    },
+    {
+      id: '62',
+      name: 'Leg Injury',
+      description: 'Injury to the leg',
+      imageUrl: 'https://via.placeholder.com/150/45B7D1/FFFFFF?text=Leg+Injury',
+      symptoms: ['Leg pain', 'Bruising', 'Swelling', 'Limited mobility']
+    },
+    {
+      id: '63',
+      name: 'Leg Swelling',
+      description: 'Swelling in the leg',
+      imageUrl: 'https://via.placeholder.com/150/45B7D1/FFFFFF?text=Leg+Swelling',
+      symptoms: ['Leg swelling', 'Pain', 'Limited mobility', 'Redness']
+    },
+    {
+      id: '64',
+      name: 'Leg Numbness',
+      description: 'Numbness or tingling in the leg',
+      imageUrl: 'https://via.placeholder.com/150/96CEB4/FFFFFF?text=Leg+Numbness',
+      symptoms: ['Numbness', 'Tingling', 'Weakness', 'Pain']
+    },
+    {
+      id: '65',
+      name: 'Leg Lump',
+      description: 'Lump or growth in the leg',
+      imageUrl: 'https://via.placeholder.com/150/FFEAA7/FFFFFF?text=Leg+Lump',
+      symptoms: ['Leg lump', 'Pain', 'Swelling', 'Limited mobility']
+    },
+    {
+      id: '66',
+      name: 'Leg Weakness',
+      description: 'Weakness or loss of strength in the leg',
+      imageUrl: 'https://via.placeholder.com/150/DDA0DD/FFFFFF?text=Leg+Weakness',
+      symptoms: ['Weakness', 'Limited mobility', 'Pain', 'Numbness']
+    }
+  ],
+  'Right Leg': [
+    {
+      id: '67',
+      name: 'Leg Pain',
+      description: 'Pain or discomfort in the leg',
+      imageUrl: 'https://via.placeholder.com/150/4ECDC4/FFFFFF?text=Leg+Pain',
+      symptoms: ['Leg pain', 'Numbness', 'Tingling', 'Weakness']
+    },
+    {
+      id: '68',
+      name: 'Leg Injury',
+      description: 'Injury to the leg',
+      imageUrl: 'https://via.placeholder.com/150/45B7D1/FFFFFF?text=Leg+Injury',
+      symptoms: ['Leg pain', 'Bruising', 'Swelling', 'Limited mobility']
+    },
+    {
+      id: '69',
+      name: 'Leg Swelling',
+      description: 'Swelling in the leg',
+      imageUrl: 'https://via.placeholder.com/150/45B7D1/FFFFFF?text=Leg+Swelling',
+      symptoms: ['Leg swelling', 'Pain', 'Limited mobility', 'Redness']
+    },
+    {
+      id: '70',
+      name: 'Leg Numbness',
+      description: 'Numbness or tingling in the leg',
+      imageUrl: 'https://via.placeholder.com/150/96CEB4/FFFFFF?text=Leg+Numbness',
+      symptoms: ['Numbness', 'Tingling', 'Weakness', 'Pain']
+    },
+    {
+      id: '71',
+      name: 'Leg Lump',
+      description: 'Lump or growth in the leg',
+      imageUrl: 'https://via.placeholder.com/150/FFEAA7/FFFFFF?text=Leg+Lump',
+      symptoms: ['Leg lump', 'Pain', 'Swelling', 'Limited mobility']
+    },
+    {
+      id: '72',
+      name: 'Leg Weakness',
+      description: 'Weakness or loss of strength in the leg',
+      imageUrl: 'https://via.placeholder.com/150/DDA0DD/FFFFFF?text=Leg+Weakness',
+      symptoms: ['Weakness', 'Limited mobility', 'Pain', 'Numbness']
+    }
+  ],
+};
+
+export default function BodyPartDetailScreen() {
+  const router = useRouter();
+  const { part } = useLocalSearchParams<{ part: string }>();
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+
+  // Get symptoms for the selected body part, default to Eyes if not found
+  const medicalImages: MedicalImage[] = bodyPartSymptoms[part || 'Eyes'] || bodyPartSymptoms['Eyes'];
+  
+  // Get the appropriate doctor specialty for this body part
+  const doctorSpecialty = bodyPartToSpecialty[part || ''] || 'General Physician';
 
   const handleImageSelect = (imageId: string) => {
     setSelectedImage(imageId);
@@ -81,6 +590,10 @@ export default function BodyPartDetailScreen() {
     }
   };
 
+  const handleBookDoctor = () => {
+    router.push(`/appointments?specialty=${encodeURIComponent(doctorSpecialty)}`);
+  };
+
   return (
     <View style={styles.container}>
       {/* Header */}
@@ -97,6 +610,22 @@ export default function BodyPartDetailScreen() {
 
       {/* Content */}
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        {/* Book Doctor Button - Add this new section */}
+        <View style={styles.bookDoctorContainer}>
+          <TouchableOpacity
+            style={styles.bookDoctorButton}
+            onPress={handleBookDoctor}
+            activeOpacity={0.9}
+          >
+            <Ionicons name="medical" size={24} color="#ffffff" />
+            <Text style={styles.bookDoctorText}>Book {doctorSpecialty}</Text>
+            <Ionicons name="chevron-forward" size={20} color="#ffffff" />
+          </TouchableOpacity>
+          <Text style={styles.bookDoctorSubtext}>
+            Consult a specialist for {part} related issues
+          </Text>
+        </View>
+
         <View style={styles.infoContainer}>
           <Text style={styles.infoText}>
             Select the image that best matches your symptoms:
@@ -118,7 +647,7 @@ export default function BodyPartDetailScreen() {
               >
                 <View style={styles.imageContainer}>
                   <Image
-                    source={{ uri: image.imageUrl }}
+                    source={image.image || { uri: image.imageUrl }}
                     style={styles.image}
                     resizeMode="cover"
                   />
@@ -282,4 +811,42 @@ const styles = StyleSheet.create({
     color: '#34495e',
     lineHeight: 24,
   },
-}); 
+  
+  // Add these new styles:
+  bookDoctorContainer: {
+    padding: 20,
+    paddingTop: 20,
+    paddingBottom: 10,
+  },
+  bookDoctorButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#27ae60',
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    gap: 10,
+  },
+  bookDoctorText: {
+    color: '#ffffff',
+    fontSize: 18,
+    fontWeight: '700',
+    flex: 1,
+    textAlign: 'center',
+  },
+  bookDoctorSubtext: {
+    fontSize: 14,
+    color: '#7f8c8d',
+    textAlign: 'center',
+    marginTop: 8,
+  },
+});

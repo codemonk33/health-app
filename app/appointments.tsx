@@ -1,17 +1,25 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useEffect, useMemo, useState } from 'react';
 import { Alert, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useResponsive } from './utils/responsive';
 
 export default function AppointmentsScreen() {
   const router = useRouter();
   const R = useResponsive();
+  const { specialty: specialtyParam } = useLocalSearchParams<{ specialty?: string }>();
   const [fullName, setFullName] = useState('');
-  const [specialty, setSpecialty] = useState('General Physician');
+  const [specialty, setSpecialty] = useState(specialtyParam || 'General Physician');
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
   const [notes, setNotes] = useState('');
+
+  // Update specialty when route param changes
+  useEffect(() => {
+    if (specialtyParam) {
+      setSpecialty(specialtyParam);
+    }
+  }, [specialtyParam]);
 
   const bookAppointment = () => {
     if (!fullName || !date || !time) {
