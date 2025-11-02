@@ -334,7 +334,7 @@ const bodyPartSymptoms: Record<string, MedicalImage[]> = {
       id: '42',
       name: 'Chest Swelling',
       description: 'Swelling in the chest area',
-      imageUrl: 'https://via.placeholder.com/150/DDA0DD/FFFFFF?text=Chest+Swelling',
+      image: require('../assets/images/Chest Swelling.png'),
       symptoms: ['Chest swelling', 'Pain', 'Breathing difficulties', 'Cough']
     }
   ],
