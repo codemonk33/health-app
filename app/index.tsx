@@ -4,6 +4,7 @@ import { useCallback, useMemo } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useResponsive } from './utils/responsive';
+import ChatBot from './components/ChatBot';
 
 
 export default function HomePage() {
@@ -223,6 +224,9 @@ export default function HomePage() {
       <View style={styles.footer}>
         <Text style={styles.footerText}>Always consult a doctor for serious symptoms</Text>
       </View>
+
+      {/* ChatBot */}
+      <ChatBot />
     </SafeAreaView>
   );
 }

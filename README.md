@@ -1,214 +1,105 @@
-# Health Assistant - Elderly Care App
+# Health Assistant (Expo + TypeScript)
 
-A comprehensive React Native (Expo CLI) mobile application designed specifically for elderly users to help identify possible health symptoms using an image-based selection system.
+A senior-friendly React Native app to help identify symptoms, get health tips, book appointments, and access emergency info. Includes an AI ChatBot on the home screen with smart redirects.
 
-## 🎯 Features
+## 🎯 Core Features
 
-### 🏠 **Home Page**
-- Three large, clearly labeled clickable buttons
-- Senior-friendly UI with large text and high contrast
-- Easy navigation to symptom selection, emergency help, and health tips
+- **Home**: Large, high-contrast actions for Symptoms, Emergency, Health Tips, Appointments, Medicine
+- **ChatBot**: Floating AI assistant with OpenRouter integration, intent detection, and auto-redirects
+- **Symptoms**: Body-part-driven flow → images → AI analysis summary
+- **AI Analysis**: Possible causes, basic treatment, when to see a doctor, recommended foods, severity
+- **Emergency**: India-focused numbers (102/108/112/etc.), symptoms requiring urgent help, legal rights
+- **Health Tips**: Curated categories (Exercise, Nutrition, Mental Health, Safety, Medication)
 
-### 🔍 **Symptom Selection Screen**
-- Interactive 3D male human body model (neutral pose)
-- Audio instruction: "Select the part where you are having a problem"
-- Tap-to-select body parts (head, eyes, arms, legs, torso, etc.)
-- Visual feedback for selected body parts
+## 🧠 ChatBot
 
-### 🖼️ **Body Part Detail Screen**
-- Grid of medical images related to the selected body part
-- Clear symptom descriptions and visual representations
-- Tap-to-analyze functionality for AI processing
+- Floating button on the home screen (opens an in-app chat panel)
+- Uses OpenRouter Chat Completions API (Nemotron free model configured)
+- Smart intent detection and redirects:
+  - “Suggest me a doctor” → `/appointments` (with specialty detection when possible)
+  - “I have chest pain” → emergency alert → `/emergency`
+  - “Check my symptoms” → `/symptoms`
+  - “Health tips” → `/health-tips`
+  - “Order medicine” → `/order-medicine`
+- Optimized keyboard behavior: chat panel pops above the keyboard; input never hidden
 
-### 🤖 **AI Analysis Result Page**
-- Comprehensive health report including:
-  - **Possible causes** of symptoms
-  - **Basic treatment suggestions**
-  - **When to seek a doctor**
-  - **Recommended healthy foods for recovery**
-- Large, readable text optimized for elderly users
-- Severity indicators (Low/Medium/High risk)
+## 🛠️ Tech Stack
 
-### 🚨 **Emergency Help Screen**
-- Quick access to emergency contacts (911, Poison Control, Local Hospital)
-- List of emergency symptoms requiring immediate attention
-- One-tap calling functionality
-- Clear instructions for emergency situations
+- React Native (Expo) + TypeScript
+- Expo Router
+- OpenRouter API (chat)
+- React Native Vector Icons
+- Safe Area Context
 
-### 💡 **Health Tips Screen**
-- Daily wellness advice categorized by:
-  - Daily Exercise
-  - Nutrition
-  - Mental Health
-  - Safety
-  - Medication
-- Practical tips for maintaining health and wellness
+## 📦 Setup
 
-## 🛠️ Technology Stack
+1) Install
+```bash
+npm install
+```
 
-- **React Native**: Cross-platform mobile development
-- **Expo CLI**: Development platform and tools
-- **Expo Router**: File-based routing
-- **TypeScript**: Type-safe development
-- **React Three Fiber**: 3D graphics rendering
-- **Expo Speech**: Text-to-speech functionality
-- **Expo AV**: Audio/Video capabilities
-- **React Native Vector Icons**: Beautiful icons
+2) Configure OpenRouter
+- Create an API key at `https://openrouter.ai/`
+- In `app/components/ChatBot.tsx`, set:
+  - `OPENROUTER_API_KEY = 'YOUR_KEY'`
+  - Optionally update `HTTP-Referer` and `X-Title`
 
-## 📱 Installation & Setup
+3) Android keyboard optimization
+- Already configured in `app.json`:
+  - `android.windowSoftInputMode: "adjustResize"`
+  - `android.edgeToEdgeEnabled: true`
 
-### Prerequisites
-- Node.js (v16 or higher)
-- Expo CLI
-- iOS Simulator or Android Emulator (optional)
-
-### Installation Steps
-
-1. **Clone the repository**
-   ```bash
-   git clone <repository-url>
-   cd cureAi
-   ```
-
-2. **Install dependencies**
-   ```bash
-   npm install
-   ```
-
-3. **Start the development server**
-   ```bash
-   npx expo start
-   ```
-
-4. **Run on device/simulator**
-   - Press `i` for iOS simulator
-   - Press `a` for Android emulator
-   - Scan QR code with Expo Go app on your phone
+4) Run
+```bash
+npx expo start
+# press i (iOS) or a (Android) or scan QR with Expo Go
+```
 
 ## 🏗️ Project Structure
 
 ```
 app/
-├── _layout.tsx                    # Navigation layout
-├── index.tsx                     # Home page with 3 main buttons
-├── symptoms.tsx                  # 3D body model and symptom selection
-├── body-part-detail.tsx          # Medical images grid
-├── ai-analysis.tsx               # AI analysis results
-├── emergency.tsx                 # Emergency contacts and help
-├── health-tips.tsx               # Daily wellness tips
-└── components/
-    └── BodyModel.tsx             # 3D male body model component
+├── _layout.tsx
+├── index.tsx                # Home (ChatBot mounted here)
+├── symptoms.tsx
+├── body-part-detail.tsx
+├── ai-analysis.tsx
+├── emergency.tsx
+├── health-tips.tsx
+├── appointments.tsx
+├── order-medicine.tsx
+├── components/
+│   └── ChatBot.tsx
+└── utils/
+    ├── aiAnalysisData.ts
+    ├── chatbotContext.ts
+    └── chatbotRedirects.ts
 ```
 
-## 🎨 Design Features
+## 🧭 Usage Tips
 
-### Elderly-Friendly Design
-- **Large Text**: Minimum 16px font sizes
-- **High Contrast**: Clear color combinations
-- **Simple Navigation**: Intuitive button layouts
-- **Touch-Friendly**: Large touch targets (minimum 44px)
-- **Clear Icons**: Meaningful visual representations
+- Open the ChatBot and type your question. Quick Actions help first-time users.
+- For booking, mention specialties (e.g., “cardiologist”) to pre-fill appointments.
+- Emergency phrases trigger alerts and redirect to the emergency page.
 
-### Accessibility Features
-- **Audio Instructions**: Text-to-speech for key interactions
-- **Visual Feedback**: Clear selection indicators
-- **Consistent Layout**: Predictable navigation patterns
-- **Error Prevention**: Confirmation dialogs for important actions
+## 🔒 Safety & Disclaimer
 
-## 🔧 Key Components
+- Not a medical device; for general information only
+- Always consult a healthcare professional for serious concerns
+- For emergencies in India, call 102/108 immediately
 
-### 3D Body Model
-- Built with React Three Fiber
-- Interactive male human body model
-- Rotatable and zoomable
-- Neutral standing pose
-- Color-coded body parts
+## 🧪 Scripts
 
-### AI Analysis System
-- Mock AI analysis (ready for real AI integration)
-- Comprehensive health reports
-- Severity assessment
-- Treatment recommendations
-- Nutritional advice
+```bash
+npm run start      # same as npx expo start
+npm run android    # open Android
+npm run ios        # open iOS
+```
 
-### Audio Integration
-- Text-to-speech instructions
-- Configurable speech rate and pitch
-- Error handling for speech failures
+## 📝 License
 
-## 🚀 Usage Guide
-
-### For Elderly Users
-
-1. **Start the App**
-   - Open the app on your device
-   - You'll see three large buttons on the home screen
-
-2. **Check Symptoms**
-   - Tap "Check Symptoms" button
-   - Listen to the audio instruction
-   - Tap on the 3D body model or use the buttons below
-   - Select the body part where you're experiencing issues
-
-3. **View Medical Images**
-   - Browse through medical images related to your selected body part
-   - Tap on the image that best matches your symptoms
-
-4. **Get AI Analysis**
-   - Review the comprehensive health report
-   - Check the severity level
-   - Read treatment suggestions and when to see a doctor
-
-5. **Emergency Help**
-   - Use the "Emergency Help" button for urgent situations
-   - Quick access to emergency contacts
-   - One-tap calling functionality
-
-6. **Health Tips**
-   - Access daily wellness advice
-   - Browse tips by category
-   - Get practical health recommendations
-
-## 🔒 Safety & Disclaimers
-
-### Important Notes
-- **Not a Medical Device**: This app is for informational purposes only
-- **Consult Healthcare Providers**: Always seek professional medical advice
-- **Emergency Situations**: Call 911 for life-threatening emergencies
-- **Data Privacy**: No personal health data is stored or transmitted
-
-### Medical Disclaimer
-This application is designed to provide general health information and should not replace professional medical advice, diagnosis, or treatment. Always consult with qualified healthcare providers for proper medical care.
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Test thoroughly with elderly users
-5. Submit a pull request
-
-## 📄 License
-
-This project is licensed under the MIT License.
-
-## 🆘 Support
-
-For support and questions:
-- Check the Expo documentation
-- Review React Native best practices
-- Open an issue in the repository
-- Contact the development team
-
-## 🔄 Future Enhancements
-
-- **Real AI Integration**: Connect to actual AI health analysis services
-- **Voice Commands**: Add voice recognition for hands-free operation
-- **Caregiver Mode**: Add features for family members and caregivers
-- **Health Tracking**: Integrate with health monitoring devices
-- **Multilingual Support**: Add support for multiple languages
-- **Offline Mode**: Enable basic functionality without internet connection
+MIT
 
 ---
 
-**Built with ❤️ for elderly care and wellness**
+Built with ❤️ for accessible, elder-friendly care
