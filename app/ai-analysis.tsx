@@ -1,8 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import Animated, { useAnimatedStyle, useSharedValue, withRepeat, withTiming, withSequence, Easing } from 'react-native-reanimated';
 import { getAnalysisForSymptom } from './utils/aiAnalysisData';
+import { useResponsive } from './utils/responsive';
+import { Theme } from './utils/theme';
 
 interface AnalysisResult {
   possibleCauses: string[];
@@ -12,11 +15,36 @@ interface AnalysisResult {
   severity: 'low' | 'medium' | 'high';
 }
 
+const HINTS = [
+  'Comparing symptoms with medical database...',
+  'Checking for common Indian weather conditions...',
+  'Analyzing severity of pain points...',
+  'Looking up nearby specialist info...',
+  'Almost done compiling report...'
+];
+
 export default function AIAnalysisScreen() {
   const router = useRouter();
+  const R = useResponsive();
   const { part, symptom } = useLocalSearchParams<{ part: string; symptom: string }>();
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [dots, setDots] = useState('');
+  const [hintIndex, setHintIndex] = useState(0);
+
+  useEffect(() => {
+    let dotCount = 0;
+    const dotInterval = setInterval(() => {
+      dotCount = (dotCount + 1) % 4;
+      setDots('.'.repeat(dotCount));
+    }, 400);
+
+    const hintInterval = setInterval(() => {
+      setHintIndex(prev => (prev + 1) % HINTS.length);
+    }, 1500);
+
+    return () => { clearInterval(dotInterval); clearInterval(hintInterval); };
+  }, []);
 
   useEffect(() => {
     // Generate AI analysis based on body part and symptom
@@ -36,16 +64,37 @@ export default function AIAnalysisScreen() {
     performAnalysis();
   }, [part, symptom]);
 
+  const pulseScale = useSharedValue(1);
+
+  useEffect(() => {
+    if (isLoading) {
+      pulseScale.value = withRepeat(
+        withSequence(
+          withTiming(1.2, { duration: 600, easing: Easing.inOut(Easing.ease) }),
+          withTiming(1, { duration: 600, easing: Easing.inOut(Easing.ease) })
+        ),
+        -1,
+        true
+      );
+    } else {
+      pulseScale.value = 1;
+    }
+  }, [isLoading, pulseScale]);
+
+  const animatedIconStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: pulseScale.value }]
+  }));
+
   const getSeverityColor = (severity: string) => {
     switch (severity) {
       case 'low':
-        return '#2ecc71';
+        return Theme.colors.secondary;
       case 'medium':
-        return '#f39c12';
+        return Theme.colors.warning;
       case 'high':
-        return '#e74c3c';
+        return Theme.colors.danger;
       default:
-        return '#95a5a6';
+        return Theme.colors.neutralSecondaryText;
     }
   };
 
@@ -62,6 +111,151 @@ export default function AIAnalysisScreen() {
     }
   };
 
+  const styles = useMemo(() => StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: Theme.colors.background,
+    },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingTop: R.spacing(60),
+      paddingBottom: R.spacing(20),
+      paddingHorizontal: R.spacing(20),
+      backgroundColor: Theme.colors.surface,
+      borderBottomWidth: 1,
+      borderBottomColor: Theme.colors.border,
+    },
+    backButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginRight: R.spacing(20),
+    },
+    backText: {
+      fontSize: R.font(Theme.typography.sizes.h3),
+      color: Theme.colors.neutralText,
+      marginLeft: R.spacing(8),
+      lineHeight: R.font(28),
+    },
+    title: {
+      fontSize: R.font(Theme.typography.sizes.h1),
+      fontWeight: 'bold',
+      color: Theme.colors.neutralText,
+    },
+    loadingContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      padding: R.spacing(40),
+    },
+    loadingText: {
+      fontSize: R.font(Theme.typography.sizes.h2),
+      fontWeight: 'bold',
+      color: Theme.colors.neutralText,
+      marginTop: R.spacing(20),
+      textAlign: 'center',
+    },
+    loadingSubtext: {
+      fontSize: R.font(Theme.typography.sizes.body),
+      color: Theme.colors.neutralSecondaryText,
+      marginTop: R.spacing(10),
+      textAlign: 'center',
+    },
+    content: {
+      flex: 1,
+    },
+    summaryContainer: {
+      backgroundColor: Theme.colors.surface,
+      padding: R.spacing(20),
+      margin: R.spacing(20),
+      borderRadius: R.size(Theme.rounding.large),
+      ...Theme.shadows.card,
+    },
+    summaryTitle: {
+      fontSize: R.font(Theme.typography.sizes.h2),
+      fontWeight: 'bold',
+      color: Theme.colors.neutralText,
+      marginBottom: R.spacing(15),
+    },
+    summaryText: {
+      fontSize: R.font(Theme.typography.sizes.h3),
+      color: Theme.colors.neutralText,
+      marginBottom: R.spacing(8),
+    },
+    highlight: {
+      fontWeight: 'bold',
+      color: Theme.colors.primary,
+    },
+    severityBadge: {
+      alignSelf: 'flex-start',
+      paddingHorizontal: R.spacing(15),
+      paddingVertical: R.spacing(8),
+      borderRadius: R.size(Theme.rounding.xl),
+      marginTop: R.spacing(10),
+    },
+    severityText: {
+      color: '#ffffff',
+      fontSize: R.font(Theme.typography.sizes.body),
+      fontWeight: 'bold',
+    },
+    sectionContainer: {
+      backgroundColor: Theme.colors.surface,
+      padding: R.spacing(20),
+      margin: R.spacing(20),
+      borderRadius: R.size(Theme.rounding.large),
+      marginTop: 0,
+      ...Theme.shadows.card,
+    },
+    sectionHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: R.spacing(15),
+    },
+    sectionTitle: {
+      fontSize: R.font(Theme.typography.sizes.h3),
+      fontWeight: 'bold',
+      color: Theme.colors.neutralText,
+      marginLeft: R.spacing(10),
+    },
+    listItem: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      marginBottom: R.spacing(10),
+    },
+    bulletPoint: {
+      fontSize: R.font(Theme.typography.sizes.h3),
+      color: Theme.colors.primary,
+      marginRight: R.spacing(10),
+      marginTop: R.spacing(2),
+    },
+    listText: {
+      fontSize: R.font(Theme.typography.sizes.body),
+      color: Theme.colors.neutralText,
+      lineHeight: R.font(22),
+      flex: 1,
+    },
+    disclaimerContainer: {
+      backgroundColor: '#fff3cd',
+      padding: R.spacing(20),
+      margin: R.spacing(20),
+      marginTop: 0,
+      borderRadius: R.size(Theme.rounding.large),
+      borderLeftWidth: 4,
+      borderLeftColor: '#ffc107',
+    },
+    disclaimerTitle: {
+      fontSize: R.font(Theme.typography.sizes.h3),
+      fontWeight: 'bold',
+      color: '#856404',
+      marginBottom: R.spacing(10),
+    },
+    disclaimerText: {
+      fontSize: R.font(14),
+      color: '#856404',
+      lineHeight: R.font(20),
+    },
+  }), [R]);
+
   if (isLoading) {
     return (
       <View style={styles.container}>
@@ -70,15 +264,17 @@ export default function AIAnalysisScreen() {
             style={styles.backButton}
             onPress={() => router.back()}
           >
-            <Ionicons name="arrow-back" size={28} color="#2c3e50" />
+            <Ionicons name="arrow-back" size={28} color={Theme.colors.neutralText} />
             <Text style={styles.backText}>Back</Text>
           </TouchableOpacity>
           <Text style={styles.title}>AI Analysis</Text>
         </View>
         <View style={styles.loadingContainer}>
-          <Ionicons name="medical" size={80} color="#3498db" />
-          <Text style={styles.loadingText}>Analyzing your symptoms...</Text>
-          <Text style={styles.loadingSubtext}>Please wait while our AI processes your information</Text>
+          <Animated.View style={animatedIconStyle}>
+            <Ionicons name="medical" size={80} color={Theme.colors.primary} />
+          </Animated.View>
+          <Text style={styles.loadingText}>Analyzing{dots}</Text>
+          <Text style={styles.loadingSubtext}>{HINTS[hintIndex]}</Text>
         </View>
       </View>
     );
@@ -92,7 +288,7 @@ export default function AIAnalysisScreen() {
           style={styles.backButton}
           onPress={() => router.back()}
         >
-          <Ionicons name="arrow-back" size={28} color="#2c3e50" />
+          <Ionicons name="arrow-back" size={28} color={Theme.colors.neutralText} />
           <Text style={styles.backText}>Back</Text>
         </TouchableOpacity>
         <Text style={styles.title}>Analysis Report</Text>
@@ -119,7 +315,7 @@ export default function AIAnalysisScreen() {
         {/* Possible Causes */}
         <View style={styles.sectionContainer}>
           <View style={styles.sectionHeader}>
-            <Ionicons name="warning" size={24} color="#e74c3c" />
+            <Ionicons name="warning" size={24} color={Theme.colors.danger} />
             <Text style={styles.sectionTitle}>Possible Causes</Text>
           </View>
           {analysisResult?.possibleCauses.map((cause, index) => (
@@ -133,7 +329,7 @@ export default function AIAnalysisScreen() {
         {/* Basic Treatment */}
         <View style={styles.sectionContainer}>
           <View style={styles.sectionHeader}>
-            <Ionicons name="medical" size={24} color="#3498db" />
+            <Ionicons name="medical" size={24} color={Theme.colors.primary} />
             <Text style={styles.sectionTitle}>Basic Treatment</Text>
           </View>
           {analysisResult?.basicTreatment.map((treatment, index) => (
@@ -147,7 +343,7 @@ export default function AIAnalysisScreen() {
         {/* When to Seek Doctor */}
         <View style={styles.sectionContainer}>
           <View style={styles.sectionHeader}>
-            <Ionicons name="alert-circle" size={24} color="#f39c12" />
+            <Ionicons name="alert-circle" size={24} color={Theme.colors.warning} />
             <Text style={styles.sectionTitle}>When to Seek a Doctor</Text>
           </View>
           {analysisResult?.whenToSeekDoctor.map((condition, index) => (
@@ -161,7 +357,7 @@ export default function AIAnalysisScreen() {
         {/* Recommended Foods */}
         <View style={styles.sectionContainer}>
           <View style={styles.sectionHeader}>
-            <Ionicons name="restaurant" size={24} color="#2ecc71" />
+            <Ionicons name="restaurant" size={24} color={Theme.colors.secondary} />
             <Text style={styles.sectionTitle}>Recommended Foods for Recovery</Text>
           </View>
           {analysisResult?.recommendedFoods.map((food, index) => (
@@ -183,161 +379,4 @@ export default function AIAnalysisScreen() {
       </ScrollView>
     </View>
   );
-}
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f8f9fa',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingTop: 60,
-    paddingBottom: 20,
-    paddingHorizontal: 20,
-    backgroundColor: '#ffffff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e9ecef',
-  },
-  backButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginRight: 20,
-  },
-  backText: {
-    fontSize: 18,
-    color: '#2c3e50',
-    marginLeft: 8,
-    lineHeight: 28,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#2c3e50',
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 40,
-  },
-  loadingText: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#2c3e50',
-    marginTop: 20,
-    textAlign: 'center',
-  },
-  loadingSubtext: {
-    fontSize: 16,
-    color: '#7f8c8d',
-    marginTop: 10,
-    textAlign: 'center',
-  },
-  content: {
-    flex: 1,
-  },
-  summaryContainer: {
-    backgroundColor: '#ffffff',
-    padding: 20,
-    margin: 20,
-    borderRadius: 15,
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-  },
-  summaryTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#2c3e50',
-    marginBottom: 15,
-  },
-  summaryText: {
-    fontSize: 18,
-    color: '#34495e',
-    marginBottom: 8,
-  },
-  highlight: {
-    fontWeight: 'bold',
-    color: '#3498db',
-  },
-  severityBadge: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: 15,
-    paddingVertical: 8,
-    borderRadius: 20,
-    marginTop: 10,
-  },
-  severityText: {
-    color: '#ffffff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  sectionContainer: {
-    backgroundColor: '#ffffff',
-    padding: 20,
-    margin: 20,
-    borderRadius: 15,
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 15,
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#2c3e50',
-    marginLeft: 10,
-  },
-  listItem: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginBottom: 10,
-  },
-  bulletPoint: {
-    fontSize: 18,
-    color: '#3498db',
-    marginRight: 10,
-    marginTop: 2,
-  },
-  listText: {
-    fontSize: 16,
-    color: '#34495e',
-    lineHeight: 22,
-    flex: 1,
-  },
-  disclaimerContainer: {
-    backgroundColor: '#fff3cd',
-    padding: 20,
-    margin: 20,
-    borderRadius: 15,
-    borderLeftWidth: 4,
-    borderLeftColor: '#ffc107',
-  },
-  disclaimerTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#856404',
-    marginBottom: 10,
-  },
-  disclaimerText: {
-    fontSize: 14,
-    color: '#856404',
-    lineHeight: 20,
-  },
-}); 
+} 

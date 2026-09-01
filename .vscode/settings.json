@@ -3,5 +3,19 @@
     "source.fixAll": "explicit",
     "source.organizeImports": "explicit",
     "source.sortMembers": "explicit"
+  },
+  // Prevent the Java extension from scanning node_modules for Gradle projects.
+  // This eliminates false-positive "missing library" build path errors from
+  // @react-native/gradle-plugin internals (shared-testutil.jar etc.)
+  "java.import.exclusions": [
+    "**/node_modules/**",
+    "**/.expo/**",
+    "**/android/build/**",
+    "**/ios/Pods/**"
+  ],
+  "java.project.importOnFirstTimeStartup": "disabled",
+  "files.watcherExclude": {
+    "**/node_modules/**": true,
+    "**/.expo/**": true
   }
 }

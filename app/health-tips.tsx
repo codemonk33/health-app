@@ -1,16 +1,19 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import React from 'react';
+import React, { useMemo } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useResponsive } from './utils/responsive';
+import { Theme } from './utils/theme';
 
 export default function HealthTipsScreen() {
   const router = useRouter();
+  const R = useResponsive();
 
   const healthTips = [
     {
       category: 'Daily Exercise',
       icon: 'fitness',
-      color: '#3498db',
+      color: Theme.colors.primary,
       tips: [
         'Take a 30-minute walk daily',
         'Do gentle stretching exercises',
@@ -21,7 +24,7 @@ export default function HealthTipsScreen() {
     {
       category: 'Nutrition',
       icon: 'restaurant',
-      color: '#2ecc71',
+      color: Theme.colors.secondary,
       tips: [
         'Eat plenty of fruits and vegetables',
         'Stay hydrated with 8 glasses of water',
@@ -32,7 +35,7 @@ export default function HealthTipsScreen() {
     {
       category: 'Mental Health',
       icon: 'happy',
-      color: '#f39c12',
+      color: Theme.colors.warning,
       tips: [
         'Stay socially connected',
         'Practice mindfulness or meditation',
@@ -43,7 +46,7 @@ export default function HealthTipsScreen() {
     {
       category: 'Safety',
       icon: 'shield-checkmark',
-      color: '#e74c3c',
+      color: Theme.colors.danger,
       tips: [
         'Keep emergency contacts handy',
         'Install grab bars in bathroom',
@@ -54,15 +57,180 @@ export default function HealthTipsScreen() {
     {
       category: 'Medication',
       icon: 'medical',
-      color: '#9b59b6',
+      color: Theme.colors.purple,
       tips: [
         'Take medications as prescribed',
         'Keep a medication list updated',
         'Use pill organizers if needed',
         'Ask questions about side effects'
       ]
+    },
+    {
+      category: 'Ayurveda',
+      icon: 'leaf',
+      color: Theme.colors.success,
+      tips: [
+        'Drink warm Tulsi & Ginger tea daily',
+        'Use Triphala for digestive wellness',
+        'Practice gentle morning yoga',
+        'Have Ashwagandha for stress relief'
+      ]
+    },
+    {
+      category: 'Monsoon Safety',
+      icon: 'water',
+      color: '#0288D1', // fallback logic color if theme primary does not match theme idea
+      tips: [
+        'Boil drinking water thoroughly',
+        'Avoid street foods during rains',
+        'Use mosquito repellents and nets',
+        'Keep skin dry to prevent infections'
+      ]
     }
   ];
+
+  const styles = useMemo(() => StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: Theme.colors.background,
+    },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingTop: R.spacing(60),
+      paddingBottom: R.spacing(20),
+      paddingHorizontal: R.spacing(20),
+      backgroundColor: Theme.colors.surface,
+      borderBottomWidth: 1,
+      borderBottomColor: Theme.colors.border,
+    },
+    backButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginRight: R.spacing(20),
+    },
+    backText: {
+      fontSize: R.font(Theme.typography.sizes.h3),
+      color: Theme.colors.neutralText,
+      marginLeft: R.spacing(8),
+    },
+    title: {
+      fontSize: R.font(Theme.typography.sizes.h1),
+      fontWeight: 'bold',
+      color: Theme.colors.neutralText,
+    },
+    content: {
+      flex: 1,
+    },
+    welcomeContainer: {
+      backgroundColor: Theme.colors.surface,
+      padding: R.spacing(30),
+      margin: R.spacing(20),
+      borderRadius: R.size(Theme.rounding.xl),
+      alignItems: 'center',
+      ...Theme.shadows.card,
+    },
+    welcomeTitle: {
+      fontSize: R.font(Theme.typography.sizes.h2),
+      fontWeight: 'bold',
+      color: Theme.colors.neutralText,
+      marginTop: R.spacing(15),
+      marginBottom: R.spacing(10),
+    },
+    welcomeText: {
+      fontSize: R.font(Theme.typography.sizes.body),
+      color: Theme.colors.neutralSecondaryText,
+      textAlign: 'center',
+      lineHeight: R.font(22),
+    },
+    categoryContainer: {
+      backgroundColor: Theme.colors.surface,
+      margin: R.spacing(20),
+      borderRadius: R.size(Theme.rounding.xl),
+      ...Theme.shadows.card,
+    },
+    categoryHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      padding: R.spacing(20),
+      borderBottomWidth: 1,
+      borderBottomColor: Theme.colors.border,
+    },
+    categoryIcon: {
+      width: R.size(60),
+      height: R.size(60),
+      borderRadius: R.size(30),
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginRight: R.spacing(15),
+    },
+    categoryTitle: {
+      fontSize: R.font(Theme.typography.sizes.h2),
+      fontWeight: 'bold',
+      color: Theme.colors.neutralText,
+    },
+    tipsContainer: {
+      padding: R.spacing(20),
+    },
+    tipItem: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      marginBottom: R.spacing(12),
+    },
+    bulletPoint: {
+      fontSize: R.font(Theme.typography.sizes.h3),
+      color: Theme.colors.primary,
+      marginRight: R.spacing(10),
+      marginTop: R.spacing(2),
+    },
+    tipText: {
+      fontSize: R.font(Theme.typography.sizes.body),
+      color: Theme.colors.neutralText,
+      lineHeight: R.font(22),
+      flex: 1,
+    },
+    resourcesContainer: {
+      backgroundColor: '#e8f5e8',
+      padding: R.spacing(20),
+      margin: R.spacing(20),
+      borderRadius: R.size(Theme.rounding.xl),
+      borderLeftWidth: 4,
+      borderLeftColor: Theme.colors.secondary,
+    },
+    resourcesTitle: {
+      fontSize: R.font(Theme.typography.sizes.h2),
+      fontWeight: 'bold',
+      color: Theme.colors.neutralText,
+      marginBottom: R.spacing(15),
+    },
+    resourcesText: {
+      fontSize: R.font(Theme.typography.sizes.body),
+      color: Theme.colors.neutralText,
+      lineHeight: R.font(24),
+    },
+    reminderContainer: {
+      backgroundColor: '#e3f2fd',
+      padding: R.spacing(20),
+      margin: R.spacing(20),
+      borderRadius: R.size(Theme.rounding.xl),
+      alignItems: 'center',
+      borderLeftWidth: 4,
+      borderLeftColor: Theme.colors.primary,
+    },
+    reminderTitle: {
+      fontSize: R.font(Theme.typography.sizes.h2),
+      fontWeight: 'bold',
+      color: Theme.colors.neutralText,
+      marginTop: R.spacing(10),
+      marginBottom: R.spacing(10),
+    },
+    reminderText: {
+      fontSize: R.font(Theme.typography.sizes.small),
+      color: Theme.colors.neutralText,
+      textAlign: 'center',
+      lineHeight: R.font(20),
+    },
+  }), [R]);
 
   return (
     <View style={styles.container}>
@@ -72,7 +240,7 @@ export default function HealthTipsScreen() {
           style={styles.backButton}
           onPress={() => router.back()}
         >
-          <Ionicons name="arrow-back" size={28} color="#2c3e50" />
+          <Ionicons name="arrow-back" size={28} color={Theme.colors.neutralText} />
           <Text style={styles.backText}>Back</Text>
         </TouchableOpacity>
         <Text style={styles.title}>Health Tips</Text>
@@ -82,7 +250,7 @@ export default function HealthTipsScreen() {
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* Welcome Message */}
         <View style={styles.welcomeContainer}>
-          <Ionicons name="heart" size={60} color="#2ecc71" />
+          <Ionicons name="heart" size={60} color={Theme.colors.secondary} />
           <Text style={styles.welcomeTitle}>Daily Wellness Tips</Text>
           <Text style={styles.welcomeText}>
             Simple tips to help you stay healthy and active every day.
@@ -123,7 +291,7 @@ export default function HealthTipsScreen() {
 
         {/* Reminder */}
         <View style={styles.reminderContainer}>
-          <Ionicons name="information-circle" size={40} color="#3498db" />
+          <Ionicons name="information-circle" size={40} color={Theme.colors.primary} />
           <Text style={styles.reminderTitle}>Remember</Text>
           <Text style={styles.reminderText}>
             These tips are general guidelines. Always consult with your healthcare provider 
@@ -134,160 +302,3 @@ export default function HealthTipsScreen() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f8f9fa',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingTop: 60,
-    paddingBottom: 20,
-    paddingHorizontal: 20,
-    backgroundColor: '#ffffff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e9ecef',
-  },
-  backButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginRight: 20,
-  },
-  backText: {
-    fontSize: 18,
-    color: '#2c3e50',
-    marginLeft: 8,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#2c3e50',
-  },
-  content: {
-    flex: 1,
-  },
-  welcomeContainer: {
-    backgroundColor: '#ffffff',
-    padding: 30,
-    margin: 20,
-    borderRadius: 15,
-    alignItems: 'center',
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-  },
-  welcomeTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#2c3e50',
-    marginTop: 15,
-    marginBottom: 10,
-  },
-  welcomeText: {
-    fontSize: 16,
-    color: '#7f8c8d',
-    textAlign: 'center',
-    lineHeight: 22,
-  },
-  categoryContainer: {
-    backgroundColor: '#ffffff',
-    margin: 20,
-    borderRadius: 15,
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-  },
-  categoryHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e9ecef',
-  },
-  categoryIcon: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 15,
-  },
-  categoryTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#2c3e50',
-  },
-  tipsContainer: {
-    padding: 20,
-  },
-  tipItem: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginBottom: 12,
-  },
-  bulletPoint: {
-    fontSize: 18,
-    color: '#3498db',
-    marginRight: 10,
-    marginTop: 2,
-  },
-  tipText: {
-    fontSize: 16,
-    color: '#34495e',
-    lineHeight: 22,
-    flex: 1,
-  },
-  resourcesContainer: {
-    backgroundColor: '#e8f5e8',
-    padding: 20,
-    margin: 20,
-    borderRadius: 15,
-    borderLeftWidth: 4,
-    borderLeftColor: '#2ecc71',
-  },
-  resourcesTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#2c3e50',
-    marginBottom: 15,
-  },
-  resourcesText: {
-    fontSize: 16,
-    color: '#34495e',
-    lineHeight: 24,
-  },
-  reminderContainer: {
-    backgroundColor: '#e3f2fd',
-    padding: 20,
-    margin: 20,
-    borderRadius: 15,
-    alignItems: 'center',
-    borderLeftWidth: 4,
-    borderLeftColor: '#3498db',
-  },
-  reminderTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#2c3e50',
-    marginTop: 10,
-    marginBottom: 10,
-  },
-  reminderText: {
-    fontSize: 14,
-    color: '#34495e',
-    textAlign: 'center',
-    lineHeight: 20,
-  },
-}); 

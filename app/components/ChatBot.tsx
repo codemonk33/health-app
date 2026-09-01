@@ -11,52 +11,25 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
-  Alert,
   Keyboard,
   useWindowDimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { getHealthDataContext } from '../utils/chatbotContext';
-import { detectRedirectIntent, RedirectType } from '../utils/chatbotRedirects';
-
-interface Message {
-  role: 'user' | 'assistant';
-  content: string;
-  timestamp: Date;
-}
-
-const OPENROUTER_API_KEY = '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';
-const OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions';
-
-// Memoize health context to avoid recalculating on every render
-let cachedHealthContext: string | null = null;
-function getCachedHealthContext() {
-  if (!cachedHealthContext) {
-    cachedHealthContext = getHealthDataContext();
-  }
-  return cachedHealthContext;
-}
+import { aiChatService, ChatMessage } from '../services/aiChatService';
+import { RedirectType } from '../utils/chatbotRedirects';
 
 export default function ChatBot() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { height: screenHeight } = useWindowDimensions();
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      role: 'assistant',
-      content: 'Hello! I\'m your health assistant. I can help you with questions about symptoms, health tips, emergency information, and general health advice. How can I help you today?',
-      timestamp: new Date(),
-    },
-  ]);
+
+  const [messages, setMessages] = useState<ChatMessage[]>(() => aiChatService.getInitialMessages());
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isMinimized, setIsMinimized] = useState(true);
   const scrollViewRef = useRef<ScrollView>(null);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
-
-  // Memoize health context
-  const healthContext = useMemo(() => getCachedHealthContext(), []);
 
   const scrollToBottom = useCallback(() => {
     setTimeout(() => {
@@ -70,7 +43,7 @@ export default function ChatBot() {
     }
   }, [messages, scrollToBottom]);
 
-  // Keyboard listeners to adjust height so the sheet sits on the keyboard
+  // Keyboard listeners to adjust height
   useEffect(() => {
     const showEvent = Platform.OS === 'android' ? 'keyboardDidShow' : 'keyboardWillShow';
     const hideEvent = Platform.OS === 'android' ? 'keyboardDidHide' : 'keyboardWillHide';
@@ -93,7 +66,6 @@ export default function ChatBot() {
     };
   }, []);
 
-  // Compute dynamic chat height to "pop" onto keyboard
   const chatHeight = useMemo(() => {
     const maxHeight = Math.min(screenHeight * 0.9, 560);
     const baseHeight = Math.max(420, screenHeight * 0.55);
@@ -102,14 +74,13 @@ export default function ChatBot() {
     return Math.max(360, Math.min(maxHeight, available));
   }, [keyboardVisible, keyboardHeight, screenHeight, insets.bottom]);
 
-  // Handle navigation based on redirect type
   const handleRedirect = useCallback((type: RedirectType, params?: Record<string, string>) => {
     if (!type) return;
 
     let route = '';
     switch (type) {
       case 'appointments':
-        route = params?.specialty 
+        route = params?.specialty
           ? `/appointments?specialty=${encodeURIComponent(params.specialty)}`
           : '/appointments';
         break;
@@ -129,10 +100,7 @@ export default function ChatBot() {
         return;
     }
 
-    // Minimize chat before navigation
     setIsMinimized(true);
-    
-    // Small delay to allow chat to minimize smoothly
     setTimeout(() => {
       router.push(route as any);
     }, 300);
@@ -141,10 +109,11 @@ export default function ChatBot() {
   const sendMessage = useCallback(async () => {
     if (!inputText.trim() || isLoading) return;
 
-    const userMessageText = inputText.trim();
-    const userMessage: Message = {
+    const userText = inputText.trim();
+    const userMessage: ChatMessage = {
+      id: `usr_${Date.now()}`,
       role: 'user',
-      content: userMessageText,
+      content: userText,
       timestamp: new Date(),
     };
 
@@ -152,148 +121,30 @@ export default function ChatBot() {
     setInputText('');
     setIsLoading(true);
 
-    // Check for redirect intent before sending to API
-    const redirectIntent = detectRedirectIntent(userMessageText);
-    
-    if (redirectIntent && redirectIntent.confidence >= 0.7) {
-      // Show confirmation before redirecting
-      const redirectMessages: Record<RedirectType, string> = {
-        'appointments': 'I can help you book an appointment with a doctor. Let me take you to the appointments page.',
-        'symptoms': 'I can help you check your symptoms. Let me take you to the symptom checker.',
-        'emergency': 'This sounds like an emergency! Let me take you to the emergency help page immediately.',
-        'health-tips': 'I can show you helpful health tips. Let me take you to the health tips page.',
-        'order-medicine': 'I can help you order medicine. Let me take you to the medicine ordering page.',
-        null: '',
-      };
-
-      const confirmationMessage = redirectMessages[redirectIntent.type!];
-      
-      // Add assistant message about redirect
-      const redirectMessage: Message = {
-        role: 'assistant',
-        content: confirmationMessage,
-        timestamp: new Date(),
-      };
-      
-      setMessages((prev) => [...prev, redirectMessage]);
-      setIsLoading(false);
-
-      // Show alert and redirect
-      setTimeout(() => {
-        if (redirectIntent.type === 'emergency') {
-          Alert.alert(
-            'Emergency Detected',
-            'Taking you to emergency help. For immediate assistance, call 102 or 108.',
-            [
-              {
-                text: 'OK',
-                onPress: () => handleRedirect(redirectIntent.type!, redirectIntent.params),
-              },
-            ]
-          );
-        } else {
-          handleRedirect(redirectIntent.type!, redirectIntent.params);
-        }
-      }, 1000);
-      return;
-    }
-
     try {
-      // Make API call
-      const response = await fetch(OPENROUTER_API_URL, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
-          'HTTP-Referer': 'https://health-assistant-app.com',
-          'X-Title': 'Health Assistant App',
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: 'nvidia/nemotron-nano-12b-v2-vl:free',
-          messages: [
-            {
-              role: 'system' as const,
-              content: `You are a helpful health assistant for an elderly care mobile application. You have access to comprehensive health data including:
-
-${healthContext}
-
-IMPORTANT GUIDELINES:
-- Always provide clear, easy-to-understand advice
-- Use simple language suitable for elderly users
-- If asked about symptoms, provide helpful information but always remind users to consult a doctor for serious concerns
-- For emergency situations, direct users to call emergency services (102 or 108 in India)
-- Be empathetic and supportive
-- Never provide medical diagnoses - only general information and guidance
-- Always recommend consulting healthcare professionals for serious symptoms`,
-            },
-            ...messages.map((msg) => ({
-              role: msg.role,
-              content: msg.content,
-            })),
-            {
-              role: 'user' as const,
-              content: userMessageText,
-            },
-          ],
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`API error: ${response.status}`);
-      }
-
-      const data = await response.json();
-      let assistantContent = data.choices?.[0]?.message?.content || 'I apologize, but I encountered an error. Please try again.';
-      
-      // Check if response contains redirect intent
-      const responseRedirectIntent = detectRedirectIntent(assistantContent);
-      if (responseRedirectIntent && responseRedirectIntent.confidence >= 0.7) {
-        const redirectMessages: Record<RedirectType, string> = {
-          'appointments': 'I can help you book an appointment. Would you like me to take you to the appointments page?',
-          'symptoms': 'I can help you check your symptoms. Would you like me to take you to the symptom checker?',
-          'emergency': 'This sounds serious! Let me take you to the emergency help page immediately.',
-          'health-tips': 'I can show you helpful health tips. Would you like me to take you there?',
-          'order-medicine': 'I can help you order medicine. Would you like me to take you to the medicine ordering page?',
-          null: '',
-        };
-        assistantContent = redirectMessages[responseRedirectIntent.type!] || assistantContent;
-      }
-
-      const assistantMessage: Message = {
-        role: 'assistant',
-        content: assistantContent,
-        timestamp: new Date(),
-      };
-
+      const { assistantMessage, redirectIntent } = await aiChatService.sendMessage(userText, messages);
       setMessages((prev) => [...prev, assistantMessage]);
 
-      // Auto-redirect if high confidence intent detected in response
-      if (responseRedirectIntent && responseRedirectIntent.confidence >= 0.85) {
+      if (redirectIntent && redirectIntent.confidence >= 0.8) {
         setTimeout(() => {
-          handleRedirect(responseRedirectIntent.type!, responseRedirectIntent.params);
-        }, 2000);
+          handleRedirect(redirectIntent.type, redirectIntent.params);
+        }, 1200);
       }
     } catch (error) {
       console.error('Error sending message:', error);
-      const errorMessage: Message = {
-        role: 'assistant',
-        content: 'I apologize, but I\'m having trouble connecting right now. Please check your internet connection and try again, or consult a healthcare professional for urgent matters.',
-        timestamp: new Date(),
-      };
-      setMessages((prev) => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
     }
-  }, [inputText, isLoading, healthContext, messages, handleRedirect]);
+  }, [inputText, isLoading, messages, handleRedirect]);
 
   if (isMinimized) {
     return (
       <TouchableOpacity
         style={styles.chatButton}
         onPress={() => setIsMinimized(false)}
-        activeOpacity={0.8}
+        activeOpacity={0.85}
       >
-        <Ionicons name="chatbubbles" size={28} color="#ffffff" />
+        <Ionicons name="chatbubbles" size={26} color="#ffffff" />
         <View style={styles.notificationBadge}>
           <Text style={styles.notificationText}>AI</Text>
         </View>
@@ -311,15 +162,20 @@ IMPORTANT GUIDELINES:
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerLeft}>
-            <Ionicons name="medical" size={24} color="#3498db" />
-            <Text style={styles.headerTitle}>Health Assistant</Text>
+            <Ionicons name="medical" size={22} color="#0056D2" />
+            <Text style={styles.headerTitle}>NEX-AI Assistant</Text>
           </View>
-          <TouchableOpacity
-            onPress={() => setIsMinimized(true)}
-            style={styles.minimizeButton}
-          >
-            <Ionicons name="chevron-down" size={24} color="#2c3e50" />
-          </TouchableOpacity>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+            <TouchableOpacity onPress={() => { setIsMinimized(true); router.push('/chat' as any); }}>
+              <Ionicons name="expand-outline" size={20} color="#2c3e50" />
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => setIsMinimized(true)}
+              style={styles.minimizeButton}
+            >
+              <Ionicons name="chevron-down" size={24} color="#2c3e50" />
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Messages */}
@@ -332,9 +188,9 @@ IMPORTANT GUIDELINES:
           automaticallyAdjustKeyboardInsets={true}
           onContentSizeChange={scrollToBottom}
         >
-          {messages.map((message, index) => (
+          {messages.map((message) => (
             <View
-              key={`${message.timestamp.getTime()}-${index}`}
+              key={message.id}
               style={[
                 styles.messageWrapper,
                 message.role === 'user' ? styles.userMessageWrapper : styles.assistantMessageWrapper,
@@ -354,13 +210,29 @@ IMPORTANT GUIDELINES:
                 >
                   {message.content}
                 </Text>
+
+                {/* Embedded Card */}
+                {message.embeddedCard && (
+                  <TouchableOpacity
+                    style={styles.floatingEmbeddedCard}
+                    onPress={() => {
+                      setIsMinimized(true);
+                      router.push(message.embeddedCard!.route as any);
+                    }}
+                  >
+                    <Ionicons name={message.embeddedCard.icon as any} size={16} color="#0056D2" />
+                    <Text style={styles.floatingEmbeddedText}>{message.embeddedCard.actionText}</Text>
+                    <Ionicons name="arrow-forward" size={12} color="#0056D2" />
+                  </TouchableOpacity>
+                )}
               </View>
             </View>
           ))}
+
           {isLoading && (
             <View style={styles.loadingWrapper}>
               <View style={styles.assistantMessage}>
-                <ActivityIndicator size="small" color="#3498db" />
+                <ActivityIndicator size="small" color="#0056D2" />
                 <Text style={styles.loadingText}>Thinking...</Text>
               </View>
             </View>
@@ -368,51 +240,50 @@ IMPORTANT GUIDELINES:
         </ScrollView>
 
         {/* Quick Action Buttons */}
-        {messages.length <= 2 && (
+        {messages.length <= 3 && (
           <View style={styles.quickActionsContainer}>
-            <Text style={styles.quickActionsTitle}>Quick Actions:</Text>
             <View style={styles.quickActionsRow}>
               <TouchableOpacity
                 style={styles.quickActionButton}
                 onPress={() => {
-                  setInputText('I need to book an appointment with a doctor');
+                  setInputText('I need to consult a doctor');
                   setTimeout(() => sendMessage(), 100);
                 }}
               >
-                <Ionicons name="calendar" size={16} color="#3498db" />
-                <Text style={styles.quickActionText}>Book Doctor</Text>
+                <Ionicons name="calendar" size={14} color="#0056D2" />
+                <Text style={styles.quickActionText}>Consult Doctor</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.quickActionButton}
                 onPress={() => {
-                  setInputText('I have some symptoms I want to check');
+                  setInputText('I want to check symptoms');
                   setTimeout(() => sendMessage(), 100);
                 }}
               >
-                <Ionicons name="medical" size={16} color="#3498db" />
+                <Ionicons name="medical" size={14} color="#0056D2" />
                 <Text style={styles.quickActionText}>Check Symptoms</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.quickActionButton}
                 onPress={() => {
-                  setInputText('Show me health tips');
+                  setInputText('Refill my medicines');
                   setTimeout(() => sendMessage(), 100);
                 }}
               >
-                <Ionicons name="heart" size={16} color="#3498db" />
-                <Text style={styles.quickActionText}>Health Tips</Text>
+                <Ionicons name="cart" size={14} color="#0056D2" />
+                <Text style={styles.quickActionText}>Refill Pills</Text>
               </TouchableOpacity>
             </View>
           </View>
         )}
 
-        {/* Input */}
+        {/* Input Bar */}
         <View style={[styles.inputContainer, { paddingBottom: 8 + insets.bottom }]}>
           <TextInput
             style={styles.input}
             value={inputText}
             onChangeText={setInputText}
-            placeholder="Ask me anything about health..."
+            placeholder="Ask anything about health..."
             placeholderTextColor="#95a5a6"
             multiline
             maxLength={500}
@@ -428,7 +299,7 @@ IMPORTANT GUIDELINES:
             {isLoading ? (
               <ActivityIndicator size="small" color="#ffffff" />
             ) : (
-              <Ionicons name="send" size={20} color="#ffffff" />
+              <Ionicons name="send" size={18} color="#ffffff" />
             )}
           </TouchableOpacity>
         </View>
@@ -449,16 +320,16 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 20,
     right: 20,
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: '#3498db',
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#0056D2',
     justifyContent: 'center',
     alignItems: 'center',
     elevation: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.25,
     shadowRadius: 8,
     zIndex: 1000,
   },
@@ -466,10 +337,10 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: -2,
     right: -2,
-    backgroundColor: '#2ecc71',
+    backgroundColor: '#10b981',
     borderRadius: 10,
-    width: 24,
-    height: 24,
+    width: 22,
+    height: 22,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
@@ -477,7 +348,7 @@ const styles = StyleSheet.create({
   },
   notificationText: {
     color: '#ffffff',
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: 'bold',
   },
   chatContainer: {
@@ -488,7 +359,7 @@ const styles = StyleSheet.create({
     elevation: 10,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.25,
     shadowRadius: 8,
   },
   header: {
@@ -505,15 +376,15 @@ const styles = StyleSheet.create({
   headerLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 8,
   },
   headerTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
+    fontSize: 17,
+    fontWeight: '700',
     color: '#2c3e50',
   },
   minimizeButton: {
-    padding: 4,
+    padding: 2,
   },
   messagesContainer: {
     flex: 1,
@@ -533,12 +404,12 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
   },
   messageBubble: {
-    maxWidth: '80%',
+    maxWidth: '82%',
     padding: 12,
     borderRadius: 16,
   },
   userMessage: {
-    backgroundColor: '#3498db',
+    backgroundColor: '#0056D2',
     borderBottomRightRadius: 4,
   },
   assistantMessage: {
@@ -549,13 +420,10 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
   },
   messageText: {
-    fontSize: 16,
-    lineHeight: 22,
+    fontSize: 14,
+    lineHeight: 20,
   },
   userMessageText: {
     color: '#ffffff',
@@ -563,20 +431,34 @@ const styles = StyleSheet.create({
   assistantMessageText: {
     color: '#2c3e50',
   },
+  floatingEmbeddedCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#E8F0FE',
+    padding: 8,
+    borderRadius: 6,
+    marginTop: 8,
+    gap: 6,
+  },
+  floatingEmbeddedText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#0056D2',
+    flex: 1,
+  },
   loadingWrapper: {
     alignItems: 'flex-start',
     marginBottom: 12,
   },
   loadingText: {
     marginLeft: 8,
-    fontSize: 14,
+    fontSize: 13,
     color: '#7f8c8d',
-    fontStyle: 'italic',
   },
   inputContainer: {
     flexDirection: 'row',
-    alignItems: 'flex-end',
-    padding: 12,
+    alignItems: 'center',
+    padding: 10,
     backgroundColor: '#ffffff',
     borderTopWidth: 1,
     borderTopColor: '#e9ecef',
@@ -584,22 +466,22 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    minHeight: 44,
-    maxHeight: 100,
+    minHeight: 40,
+    maxHeight: 90,
     backgroundColor: '#f8f9fa',
-    borderRadius: 22,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    fontSize: 16,
+    borderRadius: 20,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    fontSize: 14,
     color: '#2c3e50',
     borderWidth: 1,
     borderColor: '#e9ecef',
   },
   sendButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#3498db',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#0056D2',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -607,38 +489,31 @@ const styles = StyleSheet.create({
     backgroundColor: '#bdc3c7',
   },
   quickActionsContainer: {
-    padding: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
     backgroundColor: '#ffffff',
     borderTopWidth: 1,
     borderTopColor: '#e9ecef',
   },
-  quickActionsTitle: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#7f8c8d',
-    marginBottom: 8,
-    textTransform: 'uppercase',
-  },
   quickActionsRow: {
     flexDirection: 'row',
-    gap: 8,
+    gap: 6,
     flexWrap: 'wrap',
   },
   quickActionButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
     backgroundColor: '#e8f4f8',
-    borderRadius: 16,
+    borderRadius: 14,
     borderWidth: 1,
-    borderColor: '#3498db',
+    borderColor: '#0056D2',
   },
   quickActionText: {
-    fontSize: 12,
-    color: '#3498db',
+    fontSize: 11,
+    color: '#0056D2',
     fontWeight: '600',
   },
 });
-

@@ -6,7 +6,7 @@ interface AnalysisResult {
   severity: 'low' | 'medium' | 'high';
 }
 
-type BodyPartSymptomKey = `${string}-${string}`;
+export type BodyPartSymptomKey = `${string}-${string}`;
 
 // Comprehensive AI analysis data for each body part and symptom combination
 const aiAnalysisDatabase: Record<string, AnalysisResult> = {

@@ -1,537 +1,364 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { Alert, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { useResponsive } from './utils/responsive';
+import { Alert, ActivityIndicator, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, Modal, Switch } from 'react-native';
+import { Theme } from './utils/theme';
+import Header from './components/Header';
+import EmptyState from './components/EmptyState';
+import BottomNavBar from './components/BottomNavBar';
+import { teleconsultService, DoctorProfile, TeleconsultBooking } from './services/teleconsultService';
+import { useAuth } from './context/AuthContext';
+
+const SPECIALTIES = [
+  'All Specialties',
+  'Cardiologist',
+  'General Physician',
+  'Orthopedist',
+  'Neurologist',
+  'Dermatologist',
+];
 
 export default function AppointmentsScreen() {
   const router = useRouter();
-  const R = useResponsive();
+  const { session } = useAuth();
   const { specialty: specialtyParam } = useLocalSearchParams<{ specialty?: string }>();
-  const [fullName, setFullName] = useState('');
-  const [specialty, setSpecialty] = useState(specialtyParam || 'General Physician');
-  const [date, setDate] = useState('');
-  const [time, setTime] = useState('');
-  const [notes, setNotes] = useState('');
-  const [mode, setMode] = useState<'In-clinic' | 'Video'>('In-clinic');
-  const [location, setLocation] = useState('Bengaluru');
-  const [sortBy, setSortBy] = useState<'Relevance' | 'Experience' | 'Fees' | 'Rating'>('Relevance');
-  const [selectedDoctorId, setSelectedDoctorId] = useState<string | null>(null);
-  const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
 
-  const doctors = [
-    {
-      id: 'd1',
-      name: 'Dr. Aisha Verma',
-      specialty: 'General Physician',
-      experienceYears: 12,
-      rating: 4.8,
-      fee: 500,
-      clinic: 'HealWell Clinic • 2.1 km',
-      slots: ['09:00', '11:30', '14:00', '17:30'],
-      modeAvailable: ['In-clinic', 'Video'] as const,
-    },
-    {
-      id: 'd2',
-      name: 'Dr. Rohan Kapoor',
-      specialty: 'Cardiologist',
-      experienceYears: 18,
-      rating: 4.9,
-      fee: 900,
-      clinic: 'City Heart Center • 4.5 km',
-      slots: ['10:15', '12:00', '16:00'],
-      modeAvailable: ['In-clinic'] as const,
-    },
-    {
-      id: 'd3',
-      name: 'Dr. Neha Sharma',
-      specialty: 'Dermatologist',
-      experienceYears: 9,
-      rating: 4.6,
-      fee: 650,
-      clinic: 'SkinCare Hub • 1.2 km',
-      slots: ['09:45', '13:30', '15:00', '18:15'],
-      modeAvailable: ['Video'] as const,
-    },
-  ].filter(d =>
-    (specialty ? d.specialty.includes(specialty) : true) &&
-    (mode ? (d.modeAvailable as readonly string[]).includes(mode) : true)
-  );
+  const [activeTab, setActiveTab] = useState<'doctors' | 'history'>('doctors');
+  const [doctors] = useState<DoctorProfile[]>(() => teleconsultService.getDoctors());
+  const [selectedSpecialty, setSelectedSpecialty] = useState(specialtyParam || 'All Specialties');
+  const [selectedMode, setSelectedMode] = useState<'Video' | 'In-clinic' | 'Audio'>('Video');
+  const [bookings, setBookings] = useState<TeleconsultBooking[]>([]);
 
-  // Update specialty when route param changes
+  // Booking Modal State
+  const [selectedDoctor, setSelectedDoctor] = useState<DoctorProfile | null>(null);
+  const [selectedSlot, setSelectedSlot] = useState<string>('04:30 PM');
+  const [patientName, setPatientName] = useState(session?.name || 'Ramesh Sharma');
+  const [relationship, setRelationship] = useState<TeleconsultBooking['relationship']>('Self');
+  const [symptomsNotes, setSymptomsNotes] = useState('Follow-up on blood pressure regulation and morning dizziness');
+  const [shareRecords, setShareRecords] = useState(true);
+  const [isBooking, setIsBooking] = useState(false);
+
   useEffect(() => {
-    if (specialtyParam) {
-      setSpecialty(specialtyParam);
+    teleconsultService.getBookings().then(bks => setBookings(bks));
+  }, []);
+
+  useEffect(() => {
+    if (specialtyParam && SPECIALTIES.includes(specialtyParam)) {
+      setSelectedSpecialty(specialtyParam);
     }
   }, [specialtyParam]);
 
-  const bookAppointment = () => {
-    if (!fullName || !date || !time) {
-      Alert.alert('Missing details', 'Please fill your name, date and time');
+  const filteredDoctors = useMemo(() => {
+    return doctors.filter(doc => {
+      const matchSpec = selectedSpecialty === 'All Specialties' || doc.specialty.toLowerCase().includes(selectedSpecialty.toLowerCase());
+      const matchMode = doc.availableModes.includes(selectedMode);
+      return matchSpec && matchMode;
+    });
+  }, [doctors, selectedSpecialty, selectedMode]);
+
+  const handleOpenBooking = (doc: DoctorProfile) => {
+    setSelectedDoctor(doc);
+    setSelectedSlot(doc.availableSlots[0] || '04:30 PM');
+  };
+
+  const handleConfirmBooking = async () => {
+    if (!selectedDoctor || !patientName) {
+      Alert.alert('Missing Info', 'Please enter patient name and choose a slot.');
       return;
     }
+
+    setIsBooking(true);
+    const newBooking = await teleconsultService.createBooking({
+      doctorId: selectedDoctor.id,
+      doctorName: selectedDoctor.name,
+      doctorSpecialty: selectedDoctor.specialty,
+      patientName,
+      patientAge: 68,
+      patientGender: 'male',
+      relationship,
+      consultationType: selectedMode,
+      date: new Date().toISOString().split('T')[0],
+      timeSlot: selectedSlot,
+      symptomsNotes,
+      shareRecordsWithDoctor: shareRecords,
+    });
+
+    setIsBooking(false);
+    setSelectedDoctor(null);
+    setBookings(prev => [newBooking, ...prev]);
+
     Alert.alert(
-      'Appointment Requested',
-      `Name: ${fullName}\nSpecialty: ${specialty}\nDate: ${date}\nTime: ${time}\nNotes: ${notes || 'N/A'}`,
+      'Consultation Confirmed',
+      `Booked with ${newBooking.doctorName} for ${newBooking.timeSlot}.\nWould you like to enter the pre-call waiting room now?`,
+      [
+        { text: 'View Appointments', onPress: () => setActiveTab('history') },
+        { text: 'Enter Waiting Room', style: 'default', onPress: () => router.push(`/waiting-room?id=${newBooking.id}` as any) }
+      ]
     );
   };
 
-  const styles = useMemo(() => StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: '#f8f9fa',
-    },
-    header: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      paddingTop: R.spacing(60),
-      paddingBottom: R.spacing(20),
-      paddingHorizontal: R.spacing(20),
-      backgroundColor: '#ffffff',
-      borderBottomWidth: 1,
-      borderBottomColor: '#e9ecef',
-    },
-    backButton: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      marginRight: R.spacing(20),
-    },
-    backText: {
-      fontSize: R.font(18),
-      color: '#2c3e50',
-      marginLeft: R.spacing(8),
-      lineHeight: R.font(28),
-    },
-    title: {
-      fontSize: R.font(28),
-      fontWeight: 'bold',
-      color: '#2c3e50',
-      lineHeight: Math.round(R.font(28) * 1.25),
-    },
-    content: {
-      flex: 1,
-      padding: R.spacing(20),
-    },
-    card: {
-      backgroundColor: '#ffffff',
-      borderRadius: R.size(16),
-      padding: R.spacing(16),
-      elevation: 8,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.15,
-      shadowRadius: 8,
-      marginTop: R.spacing(12),
-    },
-    label: {
-      fontSize: R.font(14),
-      color: '#7f8c8d',
-      marginTop: R.spacing(12),
-      marginBottom: R.spacing(6),
-      lineHeight: Math.round(R.font(14) * 1.35),
-      fontWeight: '600',
-    },
-    input: {
-      borderWidth: 1,
-      borderColor: '#e1e8ed',
-      borderRadius: R.size(10),
-      paddingHorizontal: R.spacing(12),
-      paddingVertical: R.spacing(10),
-      fontSize: R.font(16),
-      color: '#2c3e50',
-      backgroundColor: '#ffffff',
-    },
-    textarea: {
-      minHeight: R.size(90),
-      textAlignVertical: 'top',
-    },
-    row: {
-      flexDirection: 'row',
-      marginTop: R.spacing(8),
-    },
-    rowItem: { flex: 1 },
-    primaryButton: {
-      marginTop: R.spacing(16),
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: '#3498db',
-      paddingVertical: R.spacing(14),
-      borderRadius: R.size(12),
-      elevation: 4,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.2,
-      shadowRadius: 4,
-      gap: R.spacing(10),
-    },
-    primaryText: {
-      color: '#ffffff',
-      fontSize: R.font(18),
-      fontWeight: '700',
-    },
-    // interactive additions
-    chipsRow: {
-      flexDirection: 'row',
-      flexWrap: 'wrap',
-      marginTop: R.spacing(8),
-    },
-    chip: {
-      borderWidth: 1,
-      borderColor: '#e1e8ed',
-      paddingVertical: R.spacing(6),
-      paddingHorizontal: R.spacing(10),
-      borderRadius: R.size(16),
-      backgroundColor: '#ffffff',
-      marginRight: R.spacing(8),
-      marginBottom: R.spacing(8),
-    },
-    chipSelected: {
-      backgroundColor: '#eaf4ff',
-      borderColor: '#cfe6ff',
-    },
-    chipText: { color: '#2c3e50' },
-    chipSelectedText: { color: '#1f6fde', fontWeight: '700' },
-    quickRow: {
-      flexDirection: 'row',
-      flexWrap: 'wrap',
-      marginTop: R.spacing(8),
-    },
-    quickBtn: {
-      borderWidth: 1,
-      borderColor: '#e1e8ed',
-      paddingVertical: R.spacing(6),
-      paddingHorizontal: R.spacing(10),
-      borderRadius: R.size(12),
-      backgroundColor: '#ffffff',
-      marginRight: R.spacing(8),
-      marginBottom: R.spacing(8),
-    },
-    quickText: { color: '#2c3e50', fontSize: R.font(13) },
-    // practo-like filters and list
-    filterCard: {
-      backgroundColor: '#ffffff',
-      borderRadius: R.size(16),
-      padding: R.spacing(12),
-      marginTop: R.spacing(12),
-      elevation: 4,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.08,
-      shadowRadius: 6,
-      borderTopWidth: 3,
-      borderTopColor: '#3498db',
-    },
-    toggleRow: {
-      flexDirection: 'row',
-      marginBottom: R.spacing(10),
-    },
-    toggleBtn: {
-      paddingVertical: R.spacing(8),
-      paddingHorizontal: R.spacing(12),
-      borderRadius: R.size(12),
-      borderWidth: 1,
-      borderColor: '#e1e8ed',
-      backgroundColor: '#ffffff',
-      marginRight: R.spacing(8),
-    },
-    toggleBtnActive: {
-      backgroundColor: '#eaf4ff',
-      borderColor: '#cfe6ff',
-    },
-    locationRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      marginBottom: R.spacing(10),
-    },
-    locationInput: {
-      flex: 1,
-      borderWidth: 1,
-      borderColor: '#e1e8ed',
-      borderRadius: R.size(10),
-      paddingHorizontal: R.spacing(12),
-      paddingVertical: R.spacing(10),
-      fontSize: R.font(16),
-      color: '#2c3e50',
-      backgroundColor: '#ffffff',
-    },
-    sortRow: {
-      flexDirection: 'row',
-      flexWrap: 'wrap',
-    },
-    sortChip: {
-      borderWidth: 1,
-      borderColor: '#e1e8ed',
-      paddingVertical: R.spacing(6),
-      paddingHorizontal: R.spacing(10),
-      borderRadius: R.size(16),
-      backgroundColor: '#ffffff',
-      marginRight: R.spacing(8),
-      marginBottom: R.spacing(8),
-    },
-    sortChipActive: {
-      backgroundColor: '#f0fff4',
-      borderColor: '#cde9d6',
-    },
-    list: { marginTop: R.spacing(12) },
-    doctorCard: {
-      backgroundColor: '#ffffff',
-      borderRadius: R.size(16),
-      padding: R.spacing(12),
-      elevation: 4,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.08,
-      shadowRadius: 6,
-      marginBottom: R.spacing(12),
-      borderLeftWidth: 4,
-      borderLeftColor: '#3498db',
-    },
-    doctorHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-    doctorName: { fontSize: R.font(18), fontWeight: '700', color: '#2c3e50', marginBottom: R.spacing(4) },
-    doctorMeta: { color: '#7f8c8d', marginTop: R.spacing(4), fontSize: R.font(13) },
-    badgeRow: { flexDirection: 'row', marginTop: R.spacing(8) },
-    ratingBadge: { backgroundColor: '#eafaf1', paddingVertical: R.spacing(4), paddingHorizontal: R.spacing(8), borderRadius: R.size(10), marginRight: R.spacing(8) },
-    feeBadge: { backgroundColor: '#eef2ff', paddingVertical: R.spacing(4), paddingHorizontal: R.spacing(8), borderRadius: R.size(10) },
-    slotRow: { flexDirection: 'row', flexWrap: 'wrap', marginTop: R.spacing(10) },
-    slotChip: {
-      borderWidth: 1,
-      borderColor: '#e1e8ed',
-      paddingVertical: R.spacing(8),
-      paddingHorizontal: R.spacing(12),
-      borderRadius: R.size(12),
-      backgroundColor: '#ffffff',
-      marginRight: R.spacing(8),
-      marginBottom: R.spacing(8),
-      minWidth: R.size(70),
-      alignItems: 'center',
-    },
-    slotChipSelected: {
-      backgroundColor: '#eaf4ff',
-      borderColor: '#cfe6ff',
-      borderWidth: 2,
-    },
-    doctorFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: R.spacing(12) },
-    bookBtn: {
-      backgroundColor: '#3498db',
-      paddingVertical: R.spacing(10),
-      paddingHorizontal: R.spacing(14),
-      borderRadius: R.size(12),
-      elevation: 2,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.15,
-      shadowRadius: 2,
-    },
-    bookText: { color: '#ffffff', fontWeight: '700' },
-    confirmBar: {
-      marginTop: R.spacing(12),
-      padding: R.spacing(12),
-      backgroundColor: '#ffffff',
-      borderRadius: R.size(12),
-      borderWidth: 1,
-      borderColor: '#e1e8ed',
-      elevation: 4,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 4,
-    },
-    confirmPrimary: { marginTop: R.spacing(10), backgroundColor: '#2ecc71', paddingVertical: R.spacing(12), borderRadius: R.size(12), alignItems: 'center' },
-    confirmPrimaryText: { color: '#ffffff', fontWeight: '700' },
-    noteBox: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: R.spacing(8),
-      marginTop: R.spacing(16),
-      padding: R.spacing(12),
-      backgroundColor: '#ecf5ff',
-      borderRadius: R.size(10),
-    },
-    noteText: {
-      color: '#2c3e50',
-      flex: 1,
-    },
-  }), [R]);
-
   return (
     <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={28} color="#2c3e50" />
-          <Text style={styles.backText}>Back</Text>
+      <Header
+        title="Doctor Consultation"
+        subtitle="Verified Geriatric & Specialist Care"
+        rightAction={{
+          icon: 'calendar',
+          onPress: () => setActiveTab('history'),
+          color: Theme.colors.purple,
+        }}
+      />
+
+      {/* Tabs */}
+      <View style={styles.tabsContainer}>
+        <TouchableOpacity
+          style={[styles.tabButton, activeTab === 'doctors' && styles.tabButtonActive]}
+          onPress={() => setActiveTab('doctors')}
+        >
+          <Text style={[styles.tabText, activeTab === 'doctors' && styles.tabTextActive]}>
+            Find Doctors ({filteredDoctors.length})
+          </Text>
         </TouchableOpacity>
-        <Text style={styles.title}>Book a Doctor</Text>
+
+        <TouchableOpacity
+          style={[styles.tabButton, activeTab === 'history' && styles.tabButtonActive]}
+          onPress={() => setActiveTab('history')}
+        >
+          <Text style={[styles.tabText, activeTab === 'history' && styles.tabTextActive]}>
+            My Consultations ({bookings.length})
+          </Text>
+        </TouchableOpacity>
       </View>
 
-      <ScrollView style={styles.content} contentContainerStyle={{ paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: R.spacing(8), marginTop: R.spacing(4) }}>
-          <Ionicons name="filter" size={20} color="#3498db" />
-          <Text style={{ fontSize: R.font(16), fontWeight: '700', color: '#2c3e50', marginLeft: R.spacing(8) }}>Filters & Search</Text>
-        </View>
-        <View style={styles.filterCard}>
-          <View style={styles.toggleRow}>
-            {(['In-clinic', 'Video'] as const).map(m => (
-              <TouchableOpacity key={m} onPress={() => setMode(m)} style={[styles.toggleBtn, mode === m ? styles.toggleBtnActive : null]} activeOpacity={0.8}>
-                <Text style={{ color: mode === m ? '#1f6fde' : '#2c3e50', fontWeight: '700' }}>{m}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-          <View style={styles.locationRow}>
-            <Ionicons name="location" size={18} color="#7f8c8d" />
-            <TextInput
-              style={styles.locationInput}
-              placeholder="Search location"
-              value={location}
-              onChangeText={setLocation}
-            />
-            <TouchableOpacity activeOpacity={0.8} onPress={() => setLocation('Current Location')} style={[styles.toggleBtn, { paddingVertical: R.spacing(8) }]}>
-              <Ionicons name="navigate" size={18} color="#1f6fde" />
-            </TouchableOpacity>
-          </View>
-          <View style={styles.sortRow}>
-            {(['Relevance','Experience','Fees','Rating'] as const).map(s => (
-              <TouchableOpacity key={s} onPress={() => setSortBy(s)} style={[styles.sortChip, sortBy === s ? styles.sortChipActive : null]} activeOpacity={0.8}>
-                <Text style={{ color: sortBy === s ? '#27ae60' : '#2c3e50' }}>{s}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-
-        {/* Doctor List */}
-        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: R.spacing(16), marginBottom: R.spacing(8) }}>
-          <Ionicons name="medical" size={20} color="#3498db" />
-          <Text style={{ fontSize: R.font(16), fontWeight: '700', color: '#2c3e50', marginLeft: R.spacing(8) }}>Available Doctors</Text>
-        </View>
-        <View style={styles.list}>
-          {doctors.map(d => (
-            <View key={d.id} style={styles.doctorCard}>
-              <View style={styles.doctorHeader}>
-                <Text style={styles.doctorName}>{d.name}</Text>
-                <Text style={{ color: '#7f8c8d' }}>{d.experienceYears} yrs</Text>
-              </View>
-              <Text style={styles.doctorMeta}>{d.specialty}</Text>
-              <Text style={styles.doctorMeta}>{d.clinic}</Text>
-              <View style={styles.badgeRow}>
-                <View style={styles.ratingBadge}><Text>⭐ {d.rating.toFixed(1)}</Text></View>
-                <View style={styles.feeBadge}><Text>₹ {d.fee}</Text></View>
-              </View>
-              <View style={styles.slotRow}>
-                {d.slots.map(s => (
-                  <TouchableOpacity key={s} onPress={() => { setSelectedDoctorId(d.id); setSelectedSlot(s); setTime(s); setSpecialty(d.specialty); }} style={[styles.slotChip, selectedDoctorId === d.id && selectedSlot === s ? styles.slotChipSelected : null]} activeOpacity={0.8}>
-                    <Text style={{ color: selectedDoctorId === d.id && selectedSlot === s ? '#1f6fde' : '#2c3e50' }}>{s}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-              <View style={styles.doctorFooter}>
-                <Text style={{ color: '#7f8c8d' }}>Today</Text>
-                <TouchableOpacity onPress={() => { setSelectedDoctorId(d.id); if (!selectedSlot) setSelectedSlot(d.slots[0]); setTime(selectedSlot || d.slots[0]); setSpecialty(d.specialty); }} style={styles.bookBtn} activeOpacity={0.9}>
-                  <Text style={styles.bookText}>Book</Text>
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        {activeTab === 'doctors' && (
+          <View>
+            {/* Consultation Mode Selector */}
+            <View style={styles.modeSelector}>
+              {(['Video', 'In-clinic', 'Audio'] as const).map(m => (
+                <TouchableOpacity
+                  key={m}
+                  style={[styles.modeButton, selectedMode === m && styles.modeButtonActive]}
+                  onPress={() => setSelectedMode(m)}
+                >
+                  <Ionicons
+                    name={m === 'Video' ? 'videocam' : m === 'In-clinic' ? 'business' : 'call'}
+                    size={16}
+                    color={selectedMode === m ? '#ffffff' : Theme.colors.neutralSecondaryText}
+                    style={{ marginRight: 6 }}
+                  />
+                  <Text style={[styles.modeButtonText, selectedMode === m && styles.modeButtonTextActive]}>
+                    {m} Call
+                  </Text>
                 </TouchableOpacity>
-              </View>
+              ))}
             </View>
-          ))}
-        </View>
 
-        {selectedDoctorId && selectedSlot ? (
-          <View style={styles.confirmBar}>
-            <Text style={{ fontWeight: '700', color: '#2c3e50' }}>Confirm Booking</Text>
-            <Text style={{ color: '#7f8c8d', marginTop: R.spacing(4) }}>
-              {doctors.find(d => d.id === selectedDoctorId)?.name} • {specialty} • {selectedSlot}
-            </Text>
-            <TouchableOpacity
-              style={styles.confirmPrimary}
-              onPress={() => {
-                setDate(date || 'Today');
-                bookAppointment();
-              }}
-              activeOpacity={0.9}
-            >
-              <Text style={styles.confirmPrimaryText}>Confirm</Text>
-            </TouchableOpacity>
-          </View>
-        ) : null}
+            {/* Specialty Pills */}
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.specialtyScroll}>
+              {SPECIALTIES.map(spec => (
+                <TouchableOpacity
+                  key={spec}
+                  style={[styles.specPill, selectedSpecialty === spec && styles.specPillActive]}
+                  onPress={() => setSelectedSpecialty(spec)}
+                >
+                  <Text style={[styles.specPillText, selectedSpecialty === spec && styles.specPillTextActive]}>
+                    {spec}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
 
-        {/* Form */}
-        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: R.spacing(16), marginBottom: R.spacing(8) }}>
-          <Ionicons name="person-add" size={20} color="#3498db" />
-          <Text style={{ fontSize: R.font(16), fontWeight: '700', color: '#2c3e50', marginLeft: R.spacing(8) }}>Patient Details</Text>
-        </View>
-        <View style={styles.card}>
-          <Text style={styles.label}>Full Name</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Your full name"
-            value={fullName}
-            onChangeText={setFullName}
-          />
+            {/* Doctor Cards */}
+            {filteredDoctors.map(doc => (
+              <View key={doc.id} style={styles.doctorCard}>
+                <View style={styles.docHeader}>
+                  <View style={styles.docAvatar}>
+                    <Ionicons name="person" size={28} color={Theme.colors.primary} />
+                  </View>
+                  <View style={{ flex: 1, marginLeft: 12 }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                      <Text style={styles.docName}>{doc.name}</Text>
+                      <Ionicons name="checkmark-circle" size={16} color="#10b981" />
+                    </View>
+                    <Text style={styles.docSpecialty}>{doc.specialty}</Text>
+                    <Text style={styles.docQual}>{doc.qualification}</Text>
+                  </View>
+                </View>
 
-          <Text style={styles.label}>Specialty</Text>
-          <View style={styles.chipsRow}>
-            {['General Physician','Cardiologist','Dentist','Dermatologist','Orthopedist'].map((s) => (
-              <TouchableOpacity
-                key={s}
-                onPress={() => setSpecialty(s)}
-                style={[styles.chip, specialty === s ? styles.chipSelected : null]}
-                activeOpacity={0.8}
-              >
-                <Text style={specialty === s ? styles.chipSelectedText : styles.chipText}>{s}</Text>
-              </TouchableOpacity>
+                <Text style={styles.docBio} numberOfLines={2}>{doc.bio}</Text>
+
+                <View style={styles.docMetaRow}>
+                  <View style={styles.metaBadge}>
+                    <Ionicons name="star" size={14} color="#f39c12" />
+                    <Text style={styles.metaBadgeText}>{doc.rating} ({doc.reviewCount})</Text>
+                  </View>
+                  <View style={styles.metaBadge}>
+                    <Ionicons name="briefcase-outline" size={14} color={Theme.colors.neutralSecondaryText} />
+                    <Text style={styles.metaBadgeText}>{doc.experienceYears} yrs exp</Text>
+                  </View>
+                  <View style={styles.metaBadge}>
+                    <Ionicons name="language-outline" size={14} color={Theme.colors.neutralSecondaryText} />
+                    <Text style={styles.metaBadgeText}>{doc.languages.slice(0, 2).join(', ')}</Text>
+                  </View>
+                </View>
+
+                <View style={styles.docFooter}>
+                  <View>
+                    <Text style={styles.feeText}>₹{doc.fee}</Text>
+                    <Text style={styles.nextSlotText}>⚡ {doc.nextAvailableSlot}</Text>
+                  </View>
+
+                  <TouchableOpacity
+                    style={styles.consultBtn}
+                    onPress={() => handleOpenBooking(doc)}
+                    activeOpacity={0.85}
+                  >
+                    <Text style={styles.consultBtnText}>Book Consultation</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
             ))}
           </View>
+        )}
 
-          <View style={styles.row}>
-            <View style={[styles.rowItem, { marginRight: 8 }]}> 
-              <Text style={styles.label}>Date</Text>
-              <TextInput
-                style={styles.input}
-                placeholder={Platform.OS === 'ios' ? 'MM/DD/YYYY' : 'DD/MM/YYYY'}
-                value={date}
-                onChangeText={setDate}
+        {/* Appointments History Tab */}
+        {activeTab === 'history' && (
+          <View>
+            {bookings.length === 0 ? (
+              <EmptyState
+                icon="calendar-outline"
+                title="No Upcoming Consultations"
+                description="Book a teleconsultation with top geriatricians and cardiologists."
+                actionText="Find Doctors"
+                onActionPress={() => setActiveTab('doctors')}
               />
-              <View style={styles.quickRow}>
-                {['Today','Tomorrow','In 2 days'].map((d) => (
-                  <TouchableOpacity key={d} onPress={() => setDate(d)} style={styles.quickBtn} activeOpacity={0.8}>
-                    <Text style={styles.quickText}>{d}</Text>
+            ) : (
+              bookings.map(bk => (
+                <View key={bk.id} style={styles.bookingCard}>
+                  <View style={styles.bookingHeader}>
+                    <View>
+                      <Text style={styles.bookingId}>Appointment #{bk.id}</Text>
+                      <Text style={styles.bookingTime}>{bk.date} • {bk.timeSlot} ({bk.consultationType})</Text>
+                    </View>
+                    <View style={styles.statusBadge}>
+                      <Text style={styles.statusBadgeText}>{bk.status.toUpperCase()}</Text>
+                    </View>
+                  </View>
+
+                  <Text style={styles.bookingDoctorName}>{bk.doctorName}</Text>
+                  <Text style={styles.bookingSpec}>{bk.doctorSpecialty} • Patient: {bk.patientName} ({bk.relationship})</Text>
+
+                  {bk.symptomsNotes && (
+                    <Text style={styles.bookingNotes}>📝 Notes: {bk.symptomsNotes}</Text>
+                  )}
+
+                  {/* Join Waiting Room Action */}
+                  <TouchableOpacity
+                    style={styles.waitingRoomBtn}
+                    onPress={() => router.push(`/waiting-room?id=${bk.id}` as any)}
+                    activeOpacity={0.85}
+                  >
+                    <Ionicons name="videocam" size={18} color="#ffffff" />
+                    <Text style={styles.waitingRoomBtnText}>Enter Video Waiting Room</Text>
                   </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-            <View style={[styles.rowItem, { marginLeft: 8 }]}> 
-              <Text style={styles.label}>Time</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="HH:MM"
-                value={time}
-                onChangeText={setTime}
-              />
-              <View style={styles.quickRow}>
-                {['09:00','11:00','14:30','17:00'].map((t) => (
-                  <TouchableOpacity key={t} onPress={() => setTime(t)} style={styles.quickBtn} activeOpacity={0.8}>
-                    <Text style={styles.quickText}>{t}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
+                </View>
+              ))
+            )}
           </View>
-
-          <Text style={styles.label}>Notes (optional)</Text>
-          <TextInput
-            style={[styles.input, styles.textarea]}
-            placeholder="Describe symptoms or preferences"
-            value={notes}
-            onChangeText={setNotes}
-            multiline
-            numberOfLines={4}
-          />
-
-          <TouchableOpacity style={styles.primaryButton} onPress={bookAppointment} activeOpacity={0.9}>
-            <Ionicons name="calendar" size={22} color="#ffffff" />
-            <Text style={styles.primaryText}>Request Appointment</Text>
-          </TouchableOpacity>
-        </View>
+        )}
       </ScrollView>
+
+      {/* Bottom Navigation Bar */}
+      <BottomNavBar activeTab="appointments" />
+
+      {/* Booking Modal */}
+      <Modal
+        visible={!!selectedDoctor}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setSelectedDoctor(null)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Book Video Consultation</Text>
+              <TouchableOpacity onPress={() => setSelectedDoctor(null)}>
+                <Ionicons name="close" size={24} color={Theme.colors.neutralText} />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView showsVerticalScrollIndicator={false}>
+              <Text style={styles.modalDocName}>{selectedDoctor?.name}</Text>
+              <Text style={styles.modalDocSpec}>{selectedDoctor?.specialty} • Fee: ₹{selectedDoctor?.fee}</Text>
+
+              {/* Time Slots */}
+              <Text style={styles.inputLabel}>Available Slots Today</Text>
+              <View style={styles.slotsRow}>
+                {(selectedDoctor?.availableSlots || ['04:30 PM', '05:00 PM']).map(slot => (
+                  <TouchableOpacity
+                    key={slot}
+                    style={[styles.slotPill, selectedSlot === slot && styles.slotPillActive]}
+                    onPress={() => setSelectedSlot(slot)}
+                  >
+                    <Text style={[styles.slotPillText, selectedSlot === slot && styles.slotPillTextActive]}>
+                      {slot}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              {/* Patient Selection */}
+              <Text style={styles.inputLabel}>Patient Name</Text>
+              <TextInput style={styles.modalInput} value={patientName} onChangeText={setPatientName} />
+
+              <Text style={styles.inputLabel}>Relationship</Text>
+              <View style={styles.slotsRow}>
+                {(['Self', 'Father', 'Mother', 'Spouse'] as const).map(rel => (
+                  <TouchableOpacity
+                    key={rel}
+                    style={[styles.slotPill, relationship === rel && styles.slotPillActive]}
+                    onPress={() => setRelationship(rel)}
+                  >
+                    <Text style={[styles.slotPillText, relationship === rel && styles.slotPillTextActive]}>
+                      {rel}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              <Text style={styles.inputLabel}>Symptoms & Reason for Visit</Text>
+              <TextInput
+                style={[styles.modalInput, { height: 60 }]}
+                value={symptomsNotes}
+                onChangeText={setSymptomsNotes}
+                multiline
+              />
+
+              {/* Share Health Records Switch */}
+              <View style={styles.shareRecordsRow}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.shareRecordsTitle}>Share Health Records & ABHA History</Text>
+                  <Text style={styles.shareRecordsSubtitle}>Enables doctor to view recent lab reports & vitals</Text>
+                </View>
+                <Switch value={shareRecords} onValueChange={setShareRecords} />
+              </View>
+
+              <TouchableOpacity
+                style={styles.confirmBookingBtn}
+                onPress={handleConfirmBooking}
+                disabled={isBooking}
+              >
+                {isBooking ? (
+                  <ActivityIndicator color="#ffffff" />
+                ) : (
+                  <Text style={styles.confirmBookingBtnText}>Confirm Consultation (₹{selectedDoctor?.fee})</Text>
+                )}
+              </TouchableOpacity>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -539,106 +366,365 @@ export default function AppointmentsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: Theme.colors.background,
   },
-  header: {
+  tabsContainer: {
     flexDirection: 'row',
-    alignItems: 'center',
-    paddingTop: 60,
-    paddingBottom: 20,
-    paddingHorizontal: 20,
-    backgroundColor: '#ffffff',
+    backgroundColor: Theme.colors.surface,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
     borderBottomWidth: 1,
-    borderBottomColor: '#e9ecef',
+    borderBottomColor: Theme.colors.border,
   },
-  backButton: {
-    flexDirection: 'row',
+  tabButton: {
+    flex: 1,
+    paddingVertical: 8,
     alignItems: 'center',
-    marginRight: 20,
+    borderRadius: 8,
   },
-  backText: {
-    fontSize: 18,
-    color: '#2c3e50',
-    marginLeft: 8,
+  tabButtonActive: {
+    backgroundColor: '#EEF2FF',
   },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#2c3e50',
+  tabText: {
+    fontWeight: '600',
+    color: Theme.colors.neutralSecondaryText,
+    fontFamily: Theme.typography.fontFamily.bodyMedium,
+    fontSize: 13,
   },
-  content: {
-    flex: 1,
-    padding: 20,
+  tabTextActive: {
+    color: Theme.colors.primary,
+    fontWeight: '700',
+    fontFamily: Theme.typography.fontFamily.bodyBold,
   },
-  card: {
-    backgroundColor: '#ffffff',
-    borderRadius: 16,
+  scrollContent: {
     padding: 16,
-    elevation: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
+    paddingBottom: 40,
   },
-  label: {
-    fontSize: 14,
-    color: '#7f8c8d',
-    marginTop: 12,
-    marginBottom: 6,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#e1e8ed',
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 16,
-    color: '#2c3e50',
-  },
-  textarea: {
-    minHeight: 90,
-    textAlignVertical: 'top',
-  },
-  row: {
+  modeSelector: {
     flexDirection: 'row',
-    marginTop: 8,
+    backgroundColor: Theme.colors.surface,
+    padding: 4,
+    borderRadius: Theme.rounding.medium,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: Theme.colors.border,
   },
-  rowItem: {
+  modeButton: {
     flex: 1,
-  },
-  primaryButton: {
-    marginTop: 16,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#3498db',
-    paddingVertical: 14,
-    borderRadius: 12,
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    gap: 10,
+    paddingVertical: 8,
+    borderRadius: 6,
   },
-  primaryText: {
+  modeButtonActive: {
+    backgroundColor: Theme.colors.primary,
+  },
+  modeButtonText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: Theme.colors.neutralSecondaryText,
+    fontFamily: Theme.typography.fontFamily.bodyMedium,
+  },
+  modeButtonTextActive: {
     color: '#ffffff',
-    fontSize: 18,
-    fontWeight: '700',
+    fontFamily: Theme.typography.fontFamily.bodyBold,
   },
-  noteBox: {
+  specialtyScroll: {
+    gap: 8,
+    marginBottom: 16,
+  },
+  specPill: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    backgroundColor: Theme.colors.surface,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: Theme.colors.border,
+  },
+  specPillActive: {
+    backgroundColor: Theme.colors.primary,
+    borderColor: Theme.colors.primary,
+  },
+  specPillText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: Theme.colors.neutralSecondaryText,
+    fontFamily: Theme.typography.fontFamily.bodyMedium,
+  },
+  specPillTextActive: {
+    color: '#ffffff',
+    fontFamily: Theme.typography.fontFamily.bodyBold,
+  },
+  doctorCard: {
+    backgroundColor: Theme.colors.surface,
+    borderRadius: Theme.rounding.large,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: Theme.colors.border,
+    ...Theme.shadows.card,
+  },
+  docHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    marginTop: 16,
-    padding: 12,
-    backgroundColor: '#ecf5ff',
-    borderRadius: 10,
+    marginBottom: 8,
   },
-  noteText: {
-    color: '#2c3e50',
+  docAvatar: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: '#EEF2FF',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  docName: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: Theme.colors.neutralText,
+    fontFamily: Theme.typography.fontFamily.bodyBold,
+  },
+  docSpecialty: {
+    fontSize: 13,
+    color: Theme.colors.primary,
+    fontWeight: '600',
+    fontFamily: Theme.typography.fontFamily.bodySemiBold,
+  },
+  docQual: {
+    fontSize: 11,
+    color: Theme.colors.neutralSecondaryText,
+    fontFamily: Theme.typography.fontFamily.body,
+  },
+  docBio: {
+    fontSize: 12,
+    color: Theme.colors.neutralSecondaryText,
+    fontFamily: Theme.typography.fontFamily.body,
+    lineHeight: 18,
+    marginBottom: 10,
+  },
+  docMetaRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 12,
+  },
+  metaBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F8FAFC',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 4,
+    gap: 4,
+  },
+  metaBadgeText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: Theme.colors.neutralText,
+    fontFamily: Theme.typography.fontFamily.bodyMedium,
+  },
+  docFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: Theme.colors.border,
+  },
+  feeText: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: Theme.colors.neutralText,
+    fontFamily: Theme.typography.fontFamily.bodyBold,
+  },
+  nextSlotText: {
+    fontSize: 11,
+    color: '#10b981',
+    fontWeight: '600',
+    fontFamily: Theme.typography.fontFamily.bodyMedium,
+  },
+  consultBtn: {
+    backgroundColor: Theme.colors.primary,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: Theme.rounding.medium,
+    ...Theme.shadows.button,
+  },
+  consultBtnText: {
+    color: '#ffffff',
+    fontWeight: '700',
+    fontSize: 13,
+    fontFamily: Theme.typography.fontFamily.bodyBold,
+  },
+  bookingCard: {
+    backgroundColor: Theme.colors.surface,
+    borderRadius: Theme.rounding.large,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: Theme.colors.border,
+    ...Theme.shadows.card,
+  },
+  bookingHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 8,
+  },
+  bookingId: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: Theme.colors.neutralText,
+  },
+  bookingTime: {
+    fontSize: 12,
+    color: Theme.colors.neutralSecondaryText,
+    marginTop: 2,
+  },
+  statusBadge: {
+    backgroundColor: '#E8F8F5',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 4,
+  },
+  statusBadgeText: {
+    color: '#10b981',
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  bookingDoctorName: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: Theme.colors.neutralText,
+  },
+  bookingSpec: {
+    fontSize: 13,
+    color: Theme.colors.neutralSecondaryText,
+    marginBottom: 8,
+  },
+  bookingNotes: {
+    fontSize: 12,
+    color: Theme.colors.neutralText,
+    marginBottom: 12,
+    backgroundColor: '#F8F9FA',
+    padding: 8,
+    borderRadius: 6,
+  },
+  waitingRoomBtn: {
+    flexDirection: 'row',
+    backgroundColor: Theme.colors.purple,
+    paddingVertical: 12,
+    borderRadius: Theme.rounding.medium,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 6,
+  },
+  waitingRoomBtnText: {
+    color: '#ffffff',
+    fontWeight: '700',
+    fontSize: 14,
+  },
+  modalOverlay: {
     flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: Theme.colors.surface,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 20,
+    maxHeight: '90%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: Theme.colors.neutralText,
+  },
+  modalDocName: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: Theme.colors.primary,
+  },
+  modalDocSpec: {
+    fontSize: 13,
+    color: Theme.colors.neutralSecondaryText,
+    marginBottom: 12,
+  },
+  inputLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: Theme.colors.neutralText,
+    marginBottom: 6,
+  },
+  slotsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 12,
+  },
+  slotPill: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 6,
+    backgroundColor: '#F8F9FA',
+    borderWidth: 1,
+    borderColor: Theme.colors.border,
+  },
+  slotPillActive: {
+    backgroundColor: Theme.colors.primary,
+    borderColor: Theme.colors.primary,
+  },
+  slotPillText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: Theme.colors.neutralText,
+  },
+  slotPillTextActive: {
+    color: '#ffffff',
+  },
+  modalInput: {
+    borderWidth: 1,
+    borderColor: Theme.colors.border,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    fontSize: 14,
+    marginBottom: 10,
+  },
+  shareRecordsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 10,
+    backgroundColor: '#E6F9F0',
+    padding: 10,
+    borderRadius: 8,
+  },
+  shareRecordsTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#065F46',
+  },
+  shareRecordsSubtitle: {
+    fontSize: 11,
+    color: '#047857',
+  },
+  confirmBookingBtn: {
+    backgroundColor: Theme.colors.primary,
+    height: 52,
+    borderRadius: Theme.rounding.large,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 12,
+  },
+  confirmBookingBtnText: {
+    color: '#ffffff',
+    fontSize: 15,
+    fontWeight: '700',
   },
 });
-
-

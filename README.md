@@ -1,105 +1,91 @@
-# Health Assistant (Expo + TypeScript)
+# CureAI - Health Assistant Application
 
-A senior-friendly React Native app to help identify symptoms, get health tips, book appointments, and access emergency info. Includes an AI ChatBot on the home screen with smart redirects.
+## Overview
+**CureAI** is a comprehensive, mobile-first health assistant application designed specifically for prioritizing accessible, unified elderly care. Built on top of React Native and Expo, the application provides an intuitive and rapid interface for users to check symptoms, securely manage health records, order medicines, and consult an AI assistant for active guidance.
 
-## 🎯 Core Features
+## Key Features
 
-- **Home**: Large, high-contrast actions for Symptoms, Emergency, Health Tips, Appointments, Medicine
-- **ChatBot**: Floating AI assistant with OpenRouter integration, intent detection, and auto-redirects
-- **Symptoms**: Body-part-driven flow → images → AI analysis summary
-- **AI Analysis**: Possible causes, basic treatment, when to see a doctor, recommended foods, severity
-- **Emergency**: India-focused numbers (102/108/112/etc.), symptoms requiring urgent help, legal rights
-- **Health Tips**: Curated categories (Exercise, Nutrition, Mental Health, Safety, Medication)
+1. **Interactive AI Chatbot (`app/components/ChatBot.tsx`)**
+   - Positioned pervasively throughout the app as a floating UI layer.
+   - Powered by OpenRouter (Nvidia Nemotron).
+   - Detects natural language user intentions (e.g., "I need a doctor" or "Emergency!") and intelligently routes them automatically to the correct application screens while providing contextual advice based on the injected health dataset.
 
-## 🧠 ChatBot
+2. **Symptom Checker (`app/symptoms.tsx` & `app/body-part-detail.tsx`)**
+   - An interactive, visual body map where users tap their affected areas.
+   - Designed for accessibility by natively employing text-to-speech (`expo-speech`) to verbally prompt users.
+   - Associated symptoms link directly to common conditions, graphical previews, and specialist doctor recommendations.
 
-- Floating button on the home screen (opens an in-app chat panel)
-- Uses OpenRouter Chat Completions API (Nemotron free model configured)
-- Smart intent detection and redirects:
-  - “Suggest me a doctor” → `/appointments` (with specialty detection when possible)
-  - “I have chest pain” → emergency alert → `/emergency`
-  - “Check my symptoms” → `/symptoms`
-  - “Health tips” → `/health-tips`
-  - “Order medicine” → `/order-medicine`
-- Optimized keyboard behavior: chat panel pops above the keyboard; input never hidden
+3. **E-Pharmacy Order System (`app/order-medicine.tsx`)**
+   - Users can securely input their details and medicine quantities.
+   - Leverages `expo-image-picker` enabling users to upload live shots of real prescriptions using their device's camera.
+   - Integrates with the backend **MedPay APIs** (currently mocked via Postman) to handle active order states and process order cancellations securely with their API Key.
 
-## 🛠️ Tech Stack
+4. **Diagnostics & Lab Bookings (`app/book-diagnostics.tsx`)**
+   - Built securely upon MedPay's Diagnostics services.
+   - Validates user input through the Pincode Serviceability constraint.
+   - Includes an ultra-fast query autocomplete for fetching real Pathology diagnostic SKUs (CBC, CBCT) directly onto the user's interface.
 
-- React Native (Expo) + TypeScript
-- Expo Router
-- OpenRouter API (chat)
-- React Native Vector Icons
-- Safe Area Context
+5. **Health Records Vault (`app/health-records.tsx`)**
+   - A centralized, unified storage solution for maintaining lifetime medical history.
+   - Allows users to dynamically:
+     - **Scan Reports**: Utilizing Expo's native camera integrations.
+     - **Import from Cloud**: Designed to abstract iCloud/G-Drive document selectors.
+     - **ABHA Connection**: Mock implementation tracking 14-digit Ayushman Bharat Health Accounts (India's national framework) to securely bind clinical notes onto their platform history.
 
-## 📦 Setup
+6. **Emergency & Health Tips (`app/emergency.tsx` & `app/health-tips.tsx`)**
+   - Dedicated rapid views for urgent assistance shortcuts and categorized wellness articles.
 
-1) Install
-```bash
-npm install
+## Technology Stack
+- **Framework:** React Native + Expo (Expo Router for navigation)
+- **Language:** TypeScript
+- **State Management:** React hooks (`useState`, `useCallback`, `useMemo`)
+- **AI Integrations:** OpenRouter API (Nemotron LLM)
+- **Partner Integrations:** MedPay Backend APIs (Mocked Postman environment)
+- **Native Hooks/Utilities:**
+  - `expo-speech` (TTS voice instructions)
+  - `expo-image-picker` (Native camera access)
+- **Design Structure:** Modular frontend utilizing centralized Application Theme files (`app/utils/theme.ts`).
+
+## Codebase Architecture Directory
+```text
+CureAI/health-app/
+├── app/
+│   ├── index.tsx                  # Main Gateway Dashboard
+│   ├── _layout.tsx                # Context Wrapper / Expo Setup
+│   ├── symptoms.tsx               # Entry Screen: Voice + Body part selection
+│   ├── body-part-detail.tsx       # Symptom drilling and specialist routing
+│   ├── order-medicine.tsx         # MedPay Pharmacy Integration
+│   ├── book-diagnostics.tsx       # MedPay Pincode & SKU Integrations
+│   ├── health-records.tsx         # Camera/Cloud/ABHA vault system
+│   ├── emergency.tsx              # Panic & Helpline dashboard
+│   ├── appointments.tsx           # Doctor matching flow
+│   ├── components/                
+│   │   └── ChatBot.tsx            # Expandable LLM interface overlay
+│   └── utils/
+│       ├── theme.ts               # Color and shadow dictionaries
+│       ├── responsive.ts          # Normalization functions for screens capabilities
+│       ├── medpay-api.ts          # MedPay fetch utilities & payload builders
+│       └── chatbotRedirects.ts    # Custom NLP intent processing for AI routing
+└── package.json                   # Expo specifications
 ```
 
-2) Configure OpenRouter
-- Create an API key at `https://openrouter.ai/`
-- In `app/components/ChatBot.tsx`, set:
-  - `OPENROUTER_API_KEY = 'YOUR_KEY'`
-  - Optionally update `HTTP-Referer` and `X-Title`
+## Local Installation & Setup
 
-3) Android keyboard optimization
-- Already configured in `app.json`:
-  - `android.windowSoftInputMode: "adjustResize"`
-  - `android.edgeToEdgeEnabled: true`
+1. **Clone the repository.**
+2. **Install node dependencies:**
+   ```bash
+   npm install
+   ```
+3. **Start the Metro build server:**
+   ```bash
+   npx expo start
+   ```
+4. **Run on Device/Simulator:** 
+   - Scan the generated QR code via the **Expo Go app** on your personal phone.
+   - Press `i` to open an iOS simulator or `a` to open an Android emulator on your desktop.
 
-4) Run
-```bash
-npx expo start
-# press i (iOS) or a (Android) or scan QR with Expo Go
-```
-
-## 🏗️ Project Structure
-
-```
-app/
-├── _layout.tsx
-├── index.tsx                # Home (ChatBot mounted here)
-├── symptoms.tsx
-├── body-part-detail.tsx
-├── ai-analysis.tsx
-├── emergency.tsx
-├── health-tips.tsx
-├── appointments.tsx
-├── order-medicine.tsx
-├── components/
-│   └── ChatBot.tsx
-└── utils/
-    ├── aiAnalysisData.ts
-    ├── chatbotContext.ts
-    └── chatbotRedirects.ts
-```
-
-## 🧭 Usage Tips
-
-- Open the ChatBot and type your question. Quick Actions help first-time users.
-- For booking, mention specialties (e.g., “cardiologist”) to pre-fill appointments.
-- Emergency phrases trigger alerts and redirect to the emergency page.
-
-## 🔒 Safety & Disclaimer
-
-- Not a medical device; for general information only
-- Always consult a healthcare professional for serious concerns
-- For emergencies in India, call 102/108 immediately
-
-## 🧪 Scripts
-
-```bash
-npm run start      # same as npx expo start
-npm run android    # open Android
-npm run ios        # open iOS
-```
-
-## 📝 License
-
-MIT
-
----
-
-Built with ❤️ for accessible, elder-friendly care
+## Scaling Constraints & Future Roadmap
+- Setup global State Management libraries (e.g., Redux or Zustand) to universally cache active Shopping Carts or Health Records arrays across router navigation stacks.
+- Migrate the Health Vault from transient memory (`useState`) over to persistent `AsyncStorage`, SQLite, or a protected encrypted Cloud Database.
+- Plug MedPay interactions from the staged `d3e10503...mock.pstmn.io` sandbox URL to their production environment variables, including actual OAuth/HMAC hashing for real application keys.
+- Inject a genuine OCR module to natively parse prescription images into structured arrays during the scanning processes.

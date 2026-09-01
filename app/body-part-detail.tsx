@@ -1,7 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useState } from 'react';
-import { Alert, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useResponsive } from './utils/responsive';
+import { Theme } from './utils/theme';
 
 interface MedicalImage {
   id: string;
@@ -562,6 +564,7 @@ const bodyPartSymptoms: Record<string, MedicalImage[]> = {
 
 export default function BodyPartDetailScreen() {
   const router = useRouter();
+  const R = useResponsive();
   const { part } = useLocalSearchParams<{ part: string }>();
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
@@ -576,23 +579,158 @@ export default function BodyPartDetailScreen() {
     const selectedImageData = medicalImages.find(img => img.id === imageId);
     
     if (selectedImageData) {
-      Alert.alert(
-        'Analyze Symptoms',
-        `Would you like to analyze "${selectedImageData.name}" symptoms?`,
-        [
-          { text: 'Cancel', style: 'cancel' },
-          { 
-            text: 'Analyze', 
-            onPress: () => router.push(`/ai-analysis?part=${encodeURIComponent(part || '')}&symptom=${encodeURIComponent(selectedImageData.name)}`)
-          }
-        ]
-      );
+      router.push(`/ai-analysis?part=${encodeURIComponent(part || '')}&symptom=${encodeURIComponent(selectedImageData.name)}`);
     }
   };
 
   const handleBookDoctor = () => {
     router.push(`/appointments?specialty=${encodeURIComponent(doctorSpecialty)}`);
   };
+
+  const styles = useMemo(() => StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: Theme.colors.background,
+    },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingTop: R.spacing(60),
+      paddingBottom: R.spacing(20),
+      paddingHorizontal: R.spacing(20),
+      backgroundColor: Theme.colors.surface,
+      borderBottomWidth: 1,
+      borderBottomColor: Theme.colors.border,
+    },
+    backButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginRight: R.spacing(20),
+    },
+    backText: {
+      fontSize: R.font(Theme.typography.sizes.h3),
+      color: Theme.colors.neutralText,
+      marginLeft: R.spacing(8),
+    },
+    title: {
+      fontSize: R.font(Theme.typography.sizes.h1),
+      fontWeight: 'bold',
+      color: Theme.colors.neutralText,
+    },
+    content: {
+      flex: 1,
+    },
+    infoContainer: {
+      backgroundColor: Theme.colors.surface,
+      padding: R.spacing(20),
+      margin: R.spacing(20),
+      borderRadius: R.size(Theme.rounding.large),
+      ...Theme.shadows.card,
+    },
+    infoText: {
+      fontSize: R.font(Theme.typography.sizes.h3),
+      color: Theme.colors.neutralText,
+      textAlign: 'center',
+      lineHeight: Math.round(R.font(24)),
+    },
+    imagesContainer: {
+      padding: R.spacing(20),
+    },
+    imagesTitle: {
+      fontSize: R.font(Theme.typography.sizes.h2),
+      fontWeight: 'bold',
+      color: Theme.colors.neutralText,
+      marginBottom: R.spacing(20),
+      textAlign: 'center',
+    },
+    imagesGrid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      justifyContent: 'space-between',
+    },
+    imageCard: {
+      width: '48%',
+      backgroundColor: Theme.colors.surface,
+      borderRadius: R.size(Theme.rounding.large),
+      marginBottom: R.spacing(20),
+      ...Theme.shadows.card,
+    },
+    selectedImageCard: {
+      borderWidth: 3,
+      borderColor: Theme.colors.primary,
+    },
+    imageContainer: {
+      height: R.size(120),
+      borderTopLeftRadius: R.size(Theme.rounding.large),
+      borderTopRightRadius: R.size(Theme.rounding.large),
+      overflow: 'hidden',
+    },
+    image: {
+      width: '100%',
+      height: '100%',
+    },
+    imageInfo: {
+      padding: R.spacing(15),
+    },
+    imageName: {
+      fontSize: R.font(Theme.typography.sizes.body),
+      fontWeight: 'bold',
+      color: Theme.colors.neutralText,
+      marginBottom: R.spacing(5),
+    },
+    imageDescription: {
+      fontSize: R.font(Theme.typography.sizes.small),
+      color: Theme.colors.neutralSecondaryText,
+      lineHeight: R.font(18),
+    },
+    instructionsContainer: {
+      backgroundColor: Theme.colors.surface,
+      padding: R.spacing(20),
+      margin: R.spacing(20),
+      borderRadius: R.size(Theme.rounding.large),
+      ...Theme.shadows.card,
+    },
+    instructionsTitle: {
+      fontSize: R.font(Theme.typography.sizes.h3),
+      fontWeight: 'bold',
+      color: Theme.colors.neutralText,
+      marginBottom: R.spacing(15),
+    },
+    instructionsText: {
+      fontSize: R.font(Theme.typography.sizes.body),
+      color: Theme.colors.neutralSecondaryText,
+      lineHeight: R.font(24),
+    },
+    bookDoctorContainer: {
+      padding: R.spacing(20),
+      paddingTop: R.spacing(20),
+      paddingBottom: R.spacing(10),
+    },
+    bookDoctorButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: Theme.colors.secondary,
+      paddingVertical: R.spacing(16),
+      paddingHorizontal: R.spacing(20),
+      borderRadius: R.size(Theme.rounding.medium),
+      gap: R.spacing(10),
+      ...Theme.shadows.button,
+    },
+    bookDoctorText: {
+      color: '#ffffff',
+      fontSize: R.font(Theme.typography.sizes.h3),
+      fontWeight: '700',
+      flex: 1,
+      textAlign: 'center',
+    },
+    bookDoctorSubtext: {
+      fontSize: R.font(Theme.typography.sizes.small),
+      color: Theme.colors.neutralSecondaryText,
+      textAlign: 'center',
+      marginTop: R.spacing(8),
+    },
+  }), [R]);
 
   return (
     <View style={styles.container}>
@@ -602,7 +740,7 @@ export default function BodyPartDetailScreen() {
           style={styles.backButton}
           onPress={() => router.back()}
         >
-          <Ionicons name="arrow-back" size={28} color="#2c3e50" />
+          <Ionicons name="arrow-back" size={28} color={Theme.colors.neutralText} />
           <Text style={styles.backText}>Back</Text>
         </TouchableOpacity>
         <Text style={styles.title}>{part} Symptoms</Text>
@@ -675,178 +813,3 @@ export default function BodyPartDetailScreen() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f8f9fa',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingTop: 60,
-    paddingBottom: 20,
-    paddingHorizontal: 20,
-    backgroundColor: '#ffffff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e9ecef',
-  },
-  backButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginRight: 20,
-  },
-  backText: {
-    fontSize: 18,
-    color: '#2c3e50',
-    marginLeft: 8,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#2c3e50',
-  },
-  content: {
-    flex: 1,
-  },
-  infoContainer: {
-    backgroundColor: '#ffffff',
-    padding: 20,
-    margin: 20,
-    borderRadius: 15,
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-  },
-  infoText: {
-    fontSize: 18,
-    color: '#2c3e50',
-    textAlign: 'center',
-    lineHeight: 24,
-  },
-  imagesContainer: {
-    padding: 20,
-  },
-  imagesTitle: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#2c3e50',
-    marginBottom: 20,
-    textAlign: 'center',
-  },
-  imagesGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-  },
-  imageCard: {
-    width: '48%',
-    backgroundColor: '#ffffff',
-    borderRadius: 15,
-    marginBottom: 20,
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-  },
-  selectedImageCard: {
-    borderWidth: 3,
-    borderColor: '#3498db',
-  },
-  imageContainer: {
-    height: 120,
-    borderTopLeftRadius: 15,
-    borderTopRightRadius: 15,
-    overflow: 'hidden',
-  },
-  image: {
-    width: '100%',
-    height: '100%',
-  },
-  imageInfo: {
-    padding: 15,
-  },
-  imageName: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#2c3e50',
-    marginBottom: 5,
-  },
-  imageDescription: {
-    fontSize: 14,
-    color: '#7f8c8d',
-    lineHeight: 18,
-  },
-  instructionsContainer: {
-    backgroundColor: '#ffffff',
-    padding: 20,
-    margin: 20,
-    borderRadius: 15,
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-  },
-  instructionsTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#2c3e50',
-    marginBottom: 15,
-  },
-  instructionsText: {
-    fontSize: 16,
-    color: '#34495e',
-    lineHeight: 24,
-  },
-  
-  // Add these new styles:
-  bookDoctorContainer: {
-    padding: 20,
-    paddingTop: 20,
-    paddingBottom: 10,
-  },
-  bookDoctorButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#27ae60',
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    borderRadius: 12,
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    gap: 10,
-  },
-  bookDoctorText: {
-    color: '#ffffff',
-    fontSize: 18,
-    fontWeight: '700',
-    flex: 1,
-    textAlign: 'center',
-  },
-  bookDoctorSubtext: {
-    fontSize: 14,
-    color: '#7f8c8d',
-    textAlign: 'center',
-    marginTop: 8,
-  },
-});
